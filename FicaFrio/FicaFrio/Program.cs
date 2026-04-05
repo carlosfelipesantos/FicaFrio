@@ -30,6 +30,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // INJETAR DEPENDÊNCIAS - Repositories
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IGastosRepository, GastosRepository>();
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 
 // INJETAR DEPENDÊNCIAS - Services
 builder.Services.AddScoped<FinancialService>();

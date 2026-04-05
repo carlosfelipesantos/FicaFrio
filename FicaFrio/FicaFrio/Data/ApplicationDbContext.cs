@@ -14,6 +14,8 @@ namespace RefrigeratorRepairSystem.Data
         public DbSet<Service> Services { get; set; }
         public DbSet<Gasto> Gastos { get; set; }
 
+        public DbSet<Cliente> Clientes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -34,6 +36,21 @@ namespace RefrigeratorRepairSystem.Data
                 .WithOne(g => g.Service)
                 .HasForeignKey(g => g.ServiceId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+
+            modelBuilder.Entity<Cliente>()
+    .HasMany(c => c.Servicos)
+    .WithOne(s => s.Cliente)
+    .HasForeignKey(s => s.ClienteId)
+    .OnDelete(DeleteBehavior.Restrict); // Não permite deletar cliente com serviços
+
+            // Índices para cliente
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.Nome);
+
+            modelBuilder.Entity<Cliente>()
+                .HasIndex(c => c.Telefone);
+
 
         }
     }

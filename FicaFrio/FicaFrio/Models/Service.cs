@@ -32,6 +32,12 @@ namespace RefrigeratorRepairSystem.Models
         [Required]
         public DateTime DataServico { get; set; }
 
+        // Adicione estas propriedades à classe Service existente
+        public int ClienteId { get; set; }  // Chave estrangeira
+
+        [ForeignKey("ClienteId")]
+        public virtual Cliente Cliente { get; set; }
+
         [Required]
         [MaxLength(20)]
         public string Status { get; set; } // Pendente, EmProgresso, Completo

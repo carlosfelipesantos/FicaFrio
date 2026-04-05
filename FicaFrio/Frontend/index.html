@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Sistema FicaFrio - Reparo de Geladeiras</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffffff);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            padding-bottom: 70px;
+            min-height: 100vh;
+        }
+
+        /* Container principal */
+        .main-container {
+            padding: 20px 16px 80px 16px;
+        }
+
+        /* Header com saudação */
+        .welcome-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px 20px;
+            margin-bottom: 20px;
+            margin-left: 15%;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .welcome-card h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .date-info {
+            color: #666;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        /* Cards de estatísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+            margin-left: 15%;
+             margin-right: 15%;
+        }
+
+        .stat-card {
+            background: rgb(255, 255, 255);
+            border-radius: 15px;
+            padding: 15px 10px;
+            text-align: center;
+            height: 250px;
+           border: 1px solid #d4d4d4;
+            transition: transform 0.2s;
+        }
+
+        .stat-card:active {
+            transform: scale(0.98);
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-value.positive {
+            color: #28a745;
+        }
+
+        .stat-value.negative {
+            color: #dc3545;
+        }
+
+        /* Cards de serviços pendentes/concluídos */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+            
+        }
+
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.384);
+        }
+
+        .status-card h4 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            
+        }
+
+        .status-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .status-number.pending {
+            color: #ffc107;
+        }
+
+        .status-number.completed {
+            color: #28a745;
+        }
+
+        /* Lista de últimos serviços */
+        .recent-services {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+
+        .btn-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .service-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .service-item:last-child {
+            border-bottom: none;
+        }
+
+        .service-info h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+
+        .service-info p {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+        }
+
+        .service-value {
+            text-align: right;
+        }
+
+        .service-value .amount {
+            font-size: 16px;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .service-value .status {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        /* Botão Novo Serviço */
+    
+            .btn-new-service {
+                background: linear-gradient(135deg, #3f60f1 0%, #426eff 100%);
+                color: white;
+                border: none;
+                border-radius: 10px;
+                padding: 16px;
+                font-size: 16px;
+                font-weight: bold;
+                width: 100%;  /* Mude de 50% para 80% ou o tamanho desejado */
+                max-width: 1000px;  /* Largura máxima */
+                margin: 0 auto;  /* Centraliza horizontalmente */
+                display: block;  /* Faz o botão se comportar como bloco */
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                transition: transform 0.2s;
+            }
+
+        
+        .btn-new-service:active {
+            transform: scale(0.98);
+        }
+
+        /* Navegação inferior */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 16px 20px;
+            box-shadow: 0 -2px 15px rgba(0,0,0,0.1);
+            border-radius: 20px 20px 0 0;
+            z-index: 1000;
+        }
+
+        .nav-item {
+            text-align: center;
+            flex: 1;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #999;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+        }
+
+        .nav-item i {
+            font-size: 24px;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .nav-item span {
+            font-size: 12px;
+        }
+
+        /* Telas */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Formulário */
+        .form-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #333;
+        }
+
+        /* Lista de serviços */
+        .services-list {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            min-height: 500px;
+        }
+
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        /* Modal */
+        .modal-content {
+            border-radius: 20px;
+        }
+
+        /* Cards financeiros */
+.finance-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.finance-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px 15px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+    border: 1px solid #e0e0e0;
+}
+
+.finance-card:active {
+    transform: scale(0.98);
+}
+
+.finance-card.revenue {
+    border-top: 4px solid #28a745;
+}
+
+.finance-card.expenses {
+    border-top: 4px solid #dc3545;
+}
+
+.finance-card.profit {
+    border-top: 4px solid #667eea;
+}
+
+.finance-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+}
+
+.finance-card.revenue .finance-icon {
+    color: #28a745;
+}
+
+.finance-card.expenses .finance-icon {
+    color: #dc3545;
+}
+
+.finance-card.profit .finance-icon {
+    color: #667eea;
+}
+
+.finance-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.finance-value {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.finance-card.revenue .finance-value {
+    color: #28a745;
+}
+
+.finance-card.expenses .finance-value {
+    color: #dc3545;
+}
+
+.finance-card.profit .finance-value {
+    color: #667eea;
+}
+
+.period-selector h4 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.financial-details {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 20px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: #666;
+    font-size: 14px;
+}
+
+.detail-value {
+    font-weight: bold;
+    color: #333;
+    font-size: 14px;
+}
+
+.detail-value.completed {
+    color: #28a745;
+}
+
+.detail-value.pending {
+    color: #ffc107;
+}
+
+
+/* Estilo para tela de clientes */
+.clientes-container {
+    background: white;
+    border-radius: 20px;
+    padding: 20px;
+    min-height: 500px;
+}
+
+.cliente-card {
+    background: white;
+    border-radius: 15px;
+    padding: 15px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border: 1px solid #e0e0e0;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.cliente-card:active {
+    transform: scale(0.98);
+}
+
+.cliente-card h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.cliente-info {
+    font-size: 13px;
+    color: #666;
+    margin: 5px 0;
+}
+
+.cliente-info i {
+    width: 20px;
+    margin-right: 5px;
+    color: #667eea;
+}
+
+.servicos-count {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.btn-add-cliente {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    width: 100%;
+    margin-bottom: 15px;
+    transition: transform 0.2s;
+}
+
+.btn-add-cliente:active {
+    transform: scale(0.98);
+}
+
+.servico-item-cliente {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-left: 3px solid #667eea;
+}
+
+.photo-upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #f9f9f9;
+}
+
+.photo-upload-area:hover {
+    border-color: #667eea;
+    background: #f0f0ff;
+}
+
+.photo-upload-area i {
+    font-size: 48px;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.photo-upload-area p {
+    margin: 0;
+    color: #666;
+}
+
+.photo-upload-area small {
+    color: #999;
+}
+
+/* Estilo para gastos */
+#gastosList {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.gasto-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+.gasto-item:hover {
+    background: #f9f9f9;
+}
+
+.gasto-desc {
+    font-weight: 500;
+    color: #333;
+}
+
+.gasto-valor {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.btn-remove {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Tela Início -->
+        <div id="homeScreen" class="screen active">
+            <div class="welcome-card">
+                <h1>Olá Fábio! 👋</h1>
+                <div class="date-info" id="currentDate"></div>
+            </div>
+               <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><img src="Images/dinheiro.png" alt="Faturamento" style="width: 100px;"></div>
+                    <div class="stat-label">Lucro</div>
+                    <div class="stat-value positive" id="weekRevenue">R$ 0</div>
+                </div>
+                <div class="stat-card">
+                   <div class="stat-icon"><img src="Images/calendario.png" alt="Garantia" style="width: 100px;"></div>
+                    <div class="stat-label">Garantia</div>
+                    <div class="stat-value negative" id="weekExpenses">R$ 0</div>
+                </div>
+                <div class="stat-card">
+                 <div class="stat-icon"><img src="Images/geladeira.png" alt="Servicos" style="width: 100px; height: 125px;"></div>
+                    <div class="stat-label">Serviços</div>
+                    <div class="stat-value positive" id="weekProfit">R$ 0</div>
+                </div>
+                    </div>
+
+             <button class="btn-new-service" onclick="abrirNovoServico()">
+                <i class="fas fa-plus"></i> Novo Serviço
+            </button>
+
+            <div class="recent-services">
+                <div class="section-header">
+                    <h3>📋 Últimos Serviços</h3>
+                    <a href="#" onclick="verTodosServicos()" class="btn-link">Ver todos →</a>
+                </div>
+                <div id="recentServicesList"></div>
+            </div>
+
+           
+        </div>
+
+        <!-- Tela Serviços -->
+        <div id="servicesScreen" class="screen">
+            <div class="services-list">
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="form-control" placeholder="🔍 Buscar por nome do cliente...">
+                </div>
+                <div id="allServicesList"></div>
+            </div>
+        </div>
+
+        <!-- Tela Clientes -->
+<div id="clientesScreen" class="screen">
+    <div class="clientes-container">
+        <div class="search-box mb-3">
+            <input type="text" id="searchClienteInput" class="form-control" placeholder="🔍 Buscar cliente por nome ou telefone...">
+        </div>
+        
+        <div class="add-cliente-btn-container">
+            <button class="btn-add-cliente" onclick="abrirFormCliente()">
+                <i class="fas fa-user-plus"></i> Novo Cliente
+            </button>
+        </div>
+        
+        <div id="clientesList" class="clientes-list"></div>
+    </div>
+</div>
+
+<!-- Modal Cliente -->
+<div class="modal fade" id="clienteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="clienteModalTitle">Novo Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="clienteForm">
+                    <input type="hidden" id="clienteId">
+                    <div class="mb-3">
+                        <label class="form-label">Nome *</label>
+                        <input type="text" id="clienteNome" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefone *</label>
+                        <input type="tel" id="clienteTelefone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Endereço *</label>
+                        <input type="text" id="clienteEndereco" class="form-control" required>
+                    </div>
+                                     <button type="submit" class="btn btn-primary w-100">Salvar Cliente</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalhes do Cliente -->
+<div class="modal fade" id="clienteDetalhesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes do Cliente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="clienteDetalhesBody"></div>
+        </div>
+    </div>
+</div>
+
+        <!-- Tela Novo Serviço -->
+        <div id="newServiceScreen" class="screen">
+            <div class="form-container">
+                <h3 class="mb-3">📝 Novo Serviço</h3>
+                <form id="serviceForm">
+                    <div class="mb-3">
+                        <label class="form-label">Nome do Cliente *</label>
+                        <input type="text" id="clientName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefone *</label>
+                        <input type="tel" id="phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Endereço *</label>
+                        <input type="text" id="address" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição do Problema *</label>
+                        <textarea id="problemDesc" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Valor Cobrado *</label>
+                        <input type="number" id="amount" class="form-control" step="0.01" required>
+                    </div>
+                                    <div class="mb-3">
+                        <label class="form-label">Data do Serviço *</label>
+                        <input type="date" id="serviceDate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select id="status" class="form-select">
+                            <option value="Pendente">Pendente</option>
+                            <option value="EmProgresso">Em Andamento</option>
+                            <option value="Completo">Concluído</option>
+                        </select>
+                    </div>
+                    <!-- Seção de Gastos -->
+<!-- Seção de Gastos - SIMPLIFICADA -->
+<div class="mb-3">
+    <label class="form-label">💰 Gastos do Serviço</label>
+    
+    <!-- Lista de gastos adicionados -->
+    <div id="gastosList" style="margin-bottom: 10px;"></div>
+    
+    <!-- Campos para adicionar novo gasto -->
+    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+        <input type="text" id="gastoDesc" class="form-control" placeholder="Ex: Peça, Gasolina..." style="flex: 2;">
+        <input type="number" id="gastoValor" class="form-control" placeholder="R$" step="0.01" style="flex: 1;">
+        <button type="button" class="btn btn-primary" onclick="adicionarGasto()" style="padding: 0 15px;">
+            <i class="fas fa-plus"></i>
+        </button>
+    </div>
+    
+    <!-- Total de gastos -->
+    <div id="totalGastos" style="background: #f0f0f0; padding: 10px; border-radius: 10px; font-weight: bold;">
+        💰 Total de gastos: R$ 0,00
+    </div>
+</div>
+
+<!-- Preview do lucro real -->
+<div id="lucroRealPreview" style="background: #d4edda; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; margin-bottom: 15px;">
+    ✅ LUCRO REAL: R$ 0,00
+</div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" id="hasWarranty" class="form-check-input">
+                            <label class="form-check-label">Tem Garantia?</label>
+                        </div>
+                    </div>
+                    <div id="warrantyFields" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">Data Início Garantia</label>
+                            <input type="date" id="warrantyStart" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Data Fim Garantia</label>
+                            <input type="date" id="warrantyEnd" class="form-control">
+                        </div>
+                    </div>
+                    <!-- Adicione no formulário de Novo Serviço, depois do campo Descrição -->
+<div class="mb-3">
+    <label class="form-label">📸 Foto do Serviço</label>
+    <div class="photo-upload-area" onclick="document.getElementById('servicePhoto').click()">
+        <i class="fas fa-camera"></i>
+        <p>Tirar foto ou selecionar imagem</p>
+        <small>Clique para adicionar foto da geladeira ou serviço</small>
+    </div>
+    <input type="file" id="servicePhoto" accept="image/*" capture="environment" style="display:none" onchange="previewPhoto(this)">
+    <div id="photoPreview" style="display:none; margin-top: 10px;">
+        <img id="photoPreviewImg" style="width: 100%; border-radius: 10px;">
+        <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removerFoto()">Remover foto</button>
+    </div>
+</div>
+
+<!-- Campo de foto do cliente -->
+<div class="mb-3">
+    <label class="form-label">👤 Foto do Cliente/Endereco</label>
+    <div class="photo-upload-area" onclick="document.getElementById('clientPhoto').click()">
+        <i class="fas fa-user"></i>
+        <p>Adicionar foto do cliente ou do endereço</p>
+    </div>
+    <input type="file" id="clientPhoto" accept="image/*" capture="environment" style="display:none" onchange="previewClientPhoto(this)">
+    <div id="clientPhotoPreview" style="display:none; margin-top: 10px;">
+        <img id="clientPhotoPreviewImg" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+        <button type="button" class="btn btn-sm btn-danger mt-2" onclick="removerFotoCliente()">Remover</button>
+    </div>
+</div>
+                    <button type="submit" class="btn-new-service">Salvar Serviço</button>
+                    <button type="button" class="btn btn-secondary w-100 mt-2" onclick="voltarInicio()">Cancelar</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tela Financeiro -->
+<div id="financialScreen" class="screen">
+    <div class="form-container">
+        <h3 class="mb-3">📊 Financeiro</h3>
+        
+        <!-- Cards de resumo financeiro -->
+        <div class="finance-cards">
+            <div class="finance-card revenue">
+                <div class="finance-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="finance-info">
+                    <div class="finance-label">Faturamento</div>
+                    <div class="finance-value" id="financeRevenue">R$ 0,00</div>
+                </div>
+            </div>
+            
+            <div class="finance-card expenses">
+                <div class="finance-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <div class="finance-info">
+                    <div class="finance-label">Gastos</div>
+                    <div class="finance-value" id="financeExpenses">R$ 0,00</div>
+                </div>
+            </div>
+            
+            <div class="finance-card profit">
+                <div class="finance-icon">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <div class="finance-info">
+                    <div class="finance-label">Lucro</div>
+                    <div class="finance-value" id="financeProfit">R$ 0,00</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seletor de período -->
+        <div class="period-selector">
+            <h4 class="mb-2">Período</h4>
+            <div class="btn-group w-100 mb-3" role="group">
+                <button class="btn btn-outline-primary period-btn" data-period="daily">Hoje</button>
+                <button class="btn btn-outline-primary period-btn" data-period="weekly">Esta Semana</button>
+                <button class="btn btn-outline-primary period-btn" data-period="monthly">Este Mês</button>
+                <button class="btn btn-outline-primary period-btn" data-period="yearly">Este Ano</button>
+            </div>
+        </div>
+        
+        <!-- Detalhes adicionais -->
+        <div id="financialDetails" class="financial-details"></div>
+    </div>
+</div>
+
+    <!-- Navegação Inferior -->
+    <div class="bottom-nav">
+    <div class="nav-item active" data-screen="home">
+        <i class="fas fa-home"></i>
+        <span>Início</span>
+    </div>
+    <div class="nav-item" data-screen="clientes">
+        <i class="fas fa-users"></i>
+        <span>Clientes</span>
+    </div>
+    <div class="nav-item" data-screen="services">
+        <i class="fas fa-list"></i>
+        <span>Serviços</span>
+    </div>
+    <div class="nav-item" data-screen="new">
+        <i class="fas fa-plus-circle"></i>
+        <span>Novo</span>
+    </div>
+    <div class="nav-item" data-screen="financial">
+        <i class="fas fa-chart-line"></i>
+        <span>Financeiro</span>
+    </div>
+</div>
+
+    <!-- Modal Detalhes -->
+    <div class="modal fade" id="serviceModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes do Serviço</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
