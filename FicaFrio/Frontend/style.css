@@ -44,22 +44,22 @@ body {
 /* Cards de estatísticas */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(3, minmax(0, 300px)); /* cada coluna no máximo 300px */
+    justify-content: center; /* centraliza o grid no container */
+    gap: 20px; /* espaço entre cards */
     margin-bottom: 20px;
-    margin-left: 15%;
-    margin-right: 15%;
 }
 
 .stat-card {
-    background: rgb(255, 255, 255);
+    background: white;
     border-radius: 15px;
-    padding: 10px 10px;
+    padding: 15px 10px;
     text-align: center;
-    height: 150px;
-    width: 300px;
+    /* remove height e width fixos, deixa o conteúdo definir */
     border: 1px solid #d4d4d4;
     transition: transform 0.2s;
+    width: 100%; /* ocupa toda largura da célula do grid */
+    max-width: 300px; /* evita que fique muito largo em telas grandes */
 }
 
 .stat-card:active {
@@ -442,7 +442,7 @@ body {
 }
 
 .btn-add-cliente {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    background: linear-gradient(135deg, #253db2 0%, #204dc9 100%);
     color: white;
     border: none;
     border-radius: 10px;
@@ -887,7 +887,7 @@ body {
     padding: 10px !important;
     font-weight: bold !important;
     cursor: pointer !important;
-    display: block !important;
+
     width: 100% !important;
     max-width: 400px !important;
     margin: 10px auto !important;
@@ -929,3 +929,38 @@ button.btn-salvar-registro:hover {
     transform: scale(1.02);
     transition: all 0.2s ease;
 }
+
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr; /* uma coluna em celular */
+        justify-items: center; /* centraliza cada card */
+        gap: 15px;
+    }
+    .stat-card {
+        max-width: 280px; /* um pouco menor no celular */
+    }
+}
+
+
+/* Cards financeiros responsivos */
+.finance-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+@media (max-width: 768px) {
+    .finance-cards {
+        grid-template-columns: 1fr; /* uma coluna */
+        justify-items: center; /* centraliza os cards */
+    }
+    .finance-card {
+        width: 100%;
+        max-width: 300px; /* largura máxima para não ficar gigante */
+        margin: 0 auto; /* centraliza */
+    }
+}
+
+
