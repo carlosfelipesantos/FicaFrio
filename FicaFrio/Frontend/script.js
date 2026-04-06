@@ -3,7 +3,6 @@ const API_URL = 'https://localhost:5001/api';
 let services = [];
 let clientes = [];
 let currentScreen = 'home';
-let gastos = []; // gastos do serviço sendo cadastrado
 
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
@@ -71,7 +70,7 @@ function setupEventListeners() {
     if (form) form.addEventListener('submit', saveService);
     
     const warrantyCheck = document.getElementById('hasWarranty');
-    if (warrantyCheck) warrantyCheck.addEventListener('change', toggleWarrantyFields);
+    if (warrantyCheck) warrantyCheck.addEventListener('change', toggleWarranty);
     
     const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.addEventListener('input', filterServices);
@@ -88,9 +87,6 @@ function setupEventListeners() {
     
     const phoneField = document.getElementById('phone');
     if (phoneField) phoneField.addEventListener('blur', buscarClientePorTelefone);
-    
-    const amountField = document.getElementById('amount');
-    if (amountField) amountField.addEventListener('input', calcularLucroReal);
 }
 
 // ==================== BUSCAR CLIENTE POR TELEFONE ====================
@@ -215,14 +211,33 @@ function filterServices() {
 
 function limparFormularioServico() {
     document.getElementById('serviceForm')?.reset();
-    gastos = [];
-    atualizarListaGastos();
-    document.getElementById('warrantyFields').style.display = 'none';
+    // Limpar os gastos dinâmicos
+    const expenseContainer = document.getElementById('expenseContainer');
+    if (expenseContainer) expenseContainer.innerHTML = '';
+    document.getElementById('hasExpense').checked = false;
+    document.getElementById('expenseContainer').style.display = 'none';
+    document.getElementById('addExpenseBtn').style.display = 'none';
+    // Reset garantia
+    document.getElementById('hasWarranty').checked = false;
+    document.getElementById('warrantyEnd').style.display = 'none';
+    // Reset status
+    initStatusButtons();
 }
 
 // Salvar serviço com gastos
 async function saveService(event) {
     event.preventDefault();
+    
+    // Coletar gastos dos campos dinâmicos
+    const gastos = [];
+    const expenseItems = document.querySelectorAll('#expenseContainer .expense-item');
+    expenseItems.forEach(item => {
+        const desc = item.querySelector('input[type="text"]').value;
+        const valor = parseFloat(item.querySelector('input[type="number"]').value);
+        if (desc && !isNaN(valor) && valor > 0) {
+            gastos.push({ descricao: desc, valor: valor });
+        }
+    });
     
     const service = {
         nomeCliente: document.getElementById('clientName').value,
@@ -233,8 +248,8 @@ async function saveService(event) {
         dataServico: document.getElementById('serviceDate').value,
         status: document.getElementById('status').value,
         temGarantia: document.getElementById('hasWarranty').checked,
-        comecoGarantia: document.getElementById('warrantyStart').value || null,
-        fimGarantia: document.getElementById('warrantyEnd').value || null
+        // Garantia começa na data do serviço (não precisa enviar comecoGarantia)
+        fimGarantia: document.getElementById('hasWarranty').checked ? document.getElementById('warrantyEnd').value : null
     };
     
     const btnSubmit = event.target.querySelector('button[type="submit"]');
@@ -252,25 +267,24 @@ async function saveService(event) {
         if (!response.ok) throw new Error('Erro ao salvar serviço');
         const savedService = await response.json();
         
-        if (gastos.length > 0) {
-            for (const gasto of gastos) {
-                const gastoData = {
-                    serviceId: savedService.id,
-                    descricacao: gasto.descricao,
-                    valor: gasto.valor,
-                    dataGasto: new Date().toISOString()
-                };
-                await fetch(`${API_URL}/Gastos`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(gastoData)
-                });
-            }
+        // Salvar gastos
+        for (const gasto of gastos) {
+            const gastoData = {
+                serviceId: savedService.id,
+                descricacao: gasto.descricao,
+                valor: gasto.valor,
+                dataGasto: new Date().toISOString()
+            };
+            await fetch(`${API_URL}/Gastos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(gastoData)
+            });
         }
         
         alert('✅ Serviço e gastos salvos com sucesso!');
         document.getElementById('serviceForm').reset();
-        limparGastos();
+        limparFormularioServico();
         await loadServices();
         await loadClientes();
         changeScreen('home');
@@ -329,7 +343,7 @@ async function showServiceDetails(id) {
             
             ${service.temGarantia ? `
             <h6>🛡️ Garantia</h6>
-            <p><strong>Início:</strong> ${service.comecoGarantia ? new Date(service.comecoGarantia).toLocaleDateString() : '-'}<br>
+            <p><strong>Início:</strong> ${new Date(service.dataServico).toLocaleDateString()}<br>
             <strong>Fim:</strong> ${service.fimGarantia ? new Date(service.fimGarantia).toLocaleDateString() : '-'}<br>
             <strong>Status:</strong> ${isInWarranty(service) ? '✅ Dentro da garantia' : '⚠️ Garantia expirada'}</p>
             ` : '<p>❌ Sem garantia</p>'}
@@ -364,74 +378,6 @@ async function deletarServico(id) {
         console.error(error);
         alert('Erro de conexão');
     }
-}
-
-// ==================== GASTOS DO FORMULÁRIO ====================
-function adicionarGasto() {
-    const descricao = document.getElementById('gastoDesc').value.trim();
-    const valor = parseFloat(document.getElementById('gastoValor').value);
-    if (!descricao) { alert('Digite a descrição do gasto (ex: Peça, Gasolina)'); return; }
-    if (isNaN(valor) || valor <= 0) { alert('Digite um valor válido'); return; }
-    gastos.push({ descricao, valor });
-    document.getElementById('gastoDesc').value = '';
-    document.getElementById('gastoValor').value = '';
-    atualizarListaGastos();
-}
-
-function atualizarListaGastos() {
-    const container = document.getElementById('gastosList');
-    const totalElement = document.getElementById('totalGastos');
-    if (!container) return;
-    
-    if (!gastos.length) {
-        container.innerHTML = '<p style="color:#999;text-align:center;padding:10px;">Nenhum gasto adicionado</p>';
-        totalElement.innerHTML = '💰 Total de gastos: R$ 0,00';
-    } else {
-        container.innerHTML = gastos.map((g, idx) => `
-            <div style="display:flex;justify-content:space-between;align-items:center;background:white;padding:10px;border-radius:10px;margin-bottom:8px;border:1px solid #e0e0e0;">
-                <div><strong>${g.descricao}</strong> <span style="color:#dc3545;">R$ ${g.valor.toFixed(2)}</span></div>
-                <button type="button" class="btn btn-sm btn-danger" onclick="removerGasto(${idx})"><i class="fas fa-trash"></i></button>
-            </div>
-        `).join('');
-        const total = gastos.reduce((s, g) => s + g.valor, 0);
-        totalElement.innerHTML = `💰 Total de gastos: R$ ${total.toFixed(2)}`;
-    }
-    calcularLucroReal();
-}
-
-function removerGasto(index) {
-    gastos.splice(index, 1);
-    atualizarListaGastos();
-}
-
-function calcularLucroReal() {
-    const valorServico = parseFloat(document.getElementById('amount')?.value) || 0;
-    const totalGastos = gastos.reduce((s, g) => s + g.valor, 0);
-    const lucro = valorServico - totalGastos;
-    const preview = document.getElementById('lucroRealPreview');
-    if (preview) {
-        if (lucro < 0) {
-            preview.innerHTML = `⚠️ PREJUÍZO: R$ ${lucro.toFixed(2)} ⚠️`;
-            preview.style.background = '#f8d7da';
-            preview.style.color = '#721c24';
-        } else {
-            preview.innerHTML = `✅ LUCRO REAL: R$ ${lucro.toFixed(2)} ✅`;
-            preview.style.background = '#d4edda';
-            preview.style.color = '#155724';
-        }
-    }
-}
-
-function limparGastos() {
-    gastos = [];
-    atualizarListaGastos();
-    document.getElementById('gastoDesc').value = '';
-    document.getElementById('gastoValor').value = '';
-}
-
-function toggleWarrantyFields() {
-    const show = document.getElementById('hasWarranty').checked;
-    document.getElementById('warrantyFields').style.display = show ? 'block' : 'none';
 }
 
 // ==================== CLIENTES ====================
@@ -471,7 +417,6 @@ function abrirFormCliente(cliente = null) {
     document.getElementById('clienteNome').value = cliente?.nome || '';
     document.getElementById('clienteTelefone').value = cliente?.telefone || '';
     document.getElementById('clienteEndereco').value = cliente?.endereco || '';
-    document.getElementById('clienteEmail').value = cliente?.email || '';
     document.getElementById('clienteModalTitle').innerText = cliente ? 'Editar Cliente' : 'Novo Cliente';
     new bootstrap.Modal(document.getElementById('clienteModal')).show();
 }
@@ -483,7 +428,6 @@ async function salvarCliente(event) {
         nome: document.getElementById('clienteNome').value,
         telefone: document.getElementById('clienteTelefone').value,
         endereco: document.getElementById('clienteEndereco').value,
-        email: document.getElementById('clienteEmail').value
     };
     
     const btn = event.target.querySelector('button[type="submit"]');
@@ -543,7 +487,6 @@ async function verDetalhesCliente(id) {
                 <p><strong>Nome:</strong> ${cliente.nome}<br>
                 <strong>Telefone:</strong> ${cliente.telefone}<br>
                 <strong>Endereço:</strong> ${cliente.endereco}<br>
-                <strong>Email:</strong> ${cliente.email || 'Não informado'}<br>
                 <strong>Cliente desde:</strong> ${new Date(cliente.dataCadastro).toLocaleDateString()}</p>
             </div>
             
@@ -658,6 +601,61 @@ async function loadFinancialReport(period) {
     }
 }
 
+// Função para salvar registro manual (financeiro)
+async function salvarFinanceiro() {
+    const valorServico = parseFloat(document.getElementById('valorServico').value);
+    if (isNaN(valorServico) || valorServico <= 0) {
+        alert('Digite um valor de faturamento válido');
+        return;
+    }
+    
+    // Coletar gastos
+    const gastos = [];
+    const expenseItems = document.querySelectorAll('#financeExpenseContainer .expense-item');
+    expenseItems.forEach(item => {
+        const desc = item.querySelector('input[type="text"]').value;
+        const valor = parseFloat(item.querySelector('input[type="number"]').value);
+        if (desc && !isNaN(valor) && valor > 0) {
+            gastos.push({ descricao: desc, valor: valor });
+        }
+    });
+    
+    // Aqui você pode implementar o envio para uma API específica de registros financeiros avulsos
+    // Como não há endpoint definido, vamos apenas mostrar um resumo e limpar o formulário
+    const totalGastos = gastos.reduce((sum, g) => sum + g.valor, 0);
+    const lucro = valorServico - totalGastos;
+    
+    let msg = `✅ Registro salvo!\n\n`;
+    msg += `Faturamento: ${formatCurrency(valorServico)}\n`;
+    msg += `Gastos: ${formatCurrency(totalGastos)}\n`;
+    msg += `Lucro: ${formatCurrency(lucro)}`;
+    
+    if (gastos.length > 0) {
+        msg += `\n\nDetalhes dos gastos:\n`;
+        gastos.forEach(g => {
+            msg += `- ${g.descricao}: ${formatCurrency(g.valor)}\n`;
+        });
+    }
+    
+    alert(msg);
+    
+    // Limpar formulário
+    document.getElementById('valorServico').value = '';
+    document.getElementById('financeExpenseContainer').innerHTML = '';
+    document.getElementById('lucroFinal').innerText = 'Lucro: R$ 0';
+    fecharFinanceiro();
+}
+
+function fecharFinanceiro() {
+    const form = document.getElementById('financeForm');
+    const btn = document.querySelector('#financialScreen .btn-new-service');
+    if (form) form.style.display = 'none';
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-plus-circle"></i> Adicionar Registro';
+        btn.style.background = "linear-gradient(135deg, #28a745 0%, #20c997 100%)";
+    }
+}
+
 // ==================== UTILITÁRIOS ====================
 function isInWarranty(service) {
     if (!service.temGarantia || !service.fimGarantia) return false;
@@ -683,15 +681,11 @@ function formatCurrency(value) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
 }
 
-
 // Função para definir o status
 function setStatus(statusValue) {
     document.getElementById('status').value = statusValue;
-    
-    // Atualizar aparência dos botões
     const btnPendente = document.getElementById('statusPendente');
     const btnConcluido = document.getElementById('statusConcluido');
-    
     if (statusValue === 'Pendente') {
         btnPendente.classList.add('active');
         btnConcluido.classList.remove('active');
@@ -701,18 +695,78 @@ function setStatus(statusValue) {
     }
 }
 
-// Inicializar status ao carregar a tela
 function initStatusButtons() {
     const statusAtual = document.getElementById('status').value;
     setStatus(statusAtual);
 }
 
-// Chamar initStatusButtons quando abrir a tela Novo Serviço
-// Adicione esta linha dentro da função limparFormularioServico():
-function limparFormularioServico() {
-    document.getElementById('serviceForm')?.reset();
-    gastos = [];
-    atualizarListaGastos();
-    document.getElementById('warrantyFields').style.display = 'none';
-    initStatusButtons(); // Adicione esta linha
+// Garantia
+function toggleWarranty() {
+    const checkbox = document.getElementById("hasWarranty");
+    const dateField = document.getElementById("warrantyEnd");
+    dateField.style.display = checkbox.checked ? "block" : "none";
+}
+
+// Gastos do serviço
+function toggleExpense() {
+    const checkbox = document.getElementById("hasExpense");
+    const container = document.getElementById("expenseContainer");
+    const btn = document.getElementById("addExpenseBtn");
+    if (checkbox.checked) {
+        container.style.display = "block";
+        btn.style.display = "block";
+        if (container.innerHTML === "") addExpense();
+    } else {
+        container.style.display = "none";
+        btn.style.display = "none";
+        container.innerHTML = "";
+    }
+}
+
+function addExpense() {
+    const container = document.getElementById("expenseContainer");
+    const div = document.createElement("div");
+    div.classList.add("expense-item");
+    div.innerHTML = `
+        <input type="text" placeholder="Peças, Gasolina, etc">
+        <input type="number" placeholder="R$">
+        <button type="button" onclick="this.parentElement.remove()">✕</button>
+    `;
+    container.appendChild(div);
+}
+
+// Financeiro toggle
+function abrirFinanceiro() {
+    const form = document.getElementById("financeForm");
+    const btn = event.currentTarget;
+    if (form.style.display === "none" || form.style.display === "") {
+        form.style.display = "flex";
+        btn.innerHTML = '<i class="fas fa-minus-circle"></i> Fechar Registro';
+        btn.style.background = "linear-gradient(135deg, #dc3545 0%, #c82333 100%)";
+    } else {
+        form.style.display = "none";
+        btn.innerHTML = '<i class="fas fa-plus-circle"></i> Adicionar Registro';
+        btn.style.background = "linear-gradient(135deg, #28a745 0%, #20c997 100%)";
+    }
+}
+
+function addFinanceExpense() {
+    const container = document.getElementById("financeExpenseContainer");
+    const div = document.createElement("div");
+    div.classList.add("expense-item");
+    div.innerHTML = `
+        <input type="text" placeholder="Ex: Peça">
+        <input type="number" placeholder="R$" oninput="calcularLucro()">
+        <button onclick="this.parentElement.remove(); calcularLucro()">✕</button>
+    `;
+    container.appendChild(div);
+}
+
+function calcularLucro() {
+    const valorServico = Number(document.getElementById("valorServico").value) || 0;
+    const gastos = document.querySelectorAll("#financeExpenseContainer input[type='number']");
+    let totalGastos = 0;
+    gastos.forEach(input => { totalGastos += Number(input.value) || 0; });
+    const lucro = valorServico - totalGastos;
+    document.getElementById("lucroFinal").innerText = "Lucro: R$ " + lucro.toFixed(2);
 }
