@@ -1,4 +1,4 @@
-const API_URL = 'https://localhost:5001/api';
+const API_URL = 'http://localhost:5244/api';
 
 let services = [];
 let clientes = [];
@@ -224,7 +224,6 @@ function limparFormularioServico() {
     initStatusButtons();
 }
 
-// Salvar serviço com gastos
 async function saveService(event) {
     event.preventDefault();
     
@@ -248,8 +247,8 @@ async function saveService(event) {
         dataServico: document.getElementById('serviceDate').value,
         status: document.getElementById('status').value,
         temGarantia: document.getElementById('hasWarranty').checked,
-        // Garantia começa na data do serviço (não precisa enviar comecoGarantia)
-        fimGarantia: document.getElementById('hasWarranty').checked ? document.getElementById('warrantyEnd').value : null
+        fimGarantia: document.getElementById('hasWarranty').checked ? document.getElementById('warrantyEnd').value : null,
+        clienteId: null  // 🔧 Adicionar clienteId (pode ser nulo por enquanto)
     };
     
     const btnSubmit = event.target.querySelector('button[type="submit"]');
@@ -264,7 +263,11 @@ async function saveService(event) {
             body: JSON.stringify(service)
         });
         
-        if (!response.ok) throw new Error('Erro ao salvar serviço');
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Erro do servidor:', errorText);
+            throw new Error('Erro ao salvar serviço');
+        }
         const savedService = await response.json();
         
         // Salvar gastos
@@ -769,4 +772,66 @@ function calcularLucro() {
     gastos.forEach(input => { totalGastos += Number(input.value) || 0; });
     const lucro = valorServico - totalGastos;
     document.getElementById("lucroFinal").innerText = "Lucro: R$ " + lucro.toFixed(2);
+}
+
+// Popular select de clientes
+function popularSelectClientes() {
+    const select = document.getElementById('selectCliente');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">-- Selecione um cliente --</option>';
+    clientes.forEach(cliente => {
+        select.innerHTML += `<option value="${cliente.id}">${cliente.nome} - ${cliente.telefone}</option>`;
+    });
+}
+
+// Carregar dados do cliente selecionado
+function carregarClienteSelecionado() {
+    const select = document.getElementById('selectCliente');
+    const clienteId = parseInt(select.value);
+    
+    if (!clienteId) {
+        alert('Selecione um cliente primeiro');
+        return;
+    }
+    
+    const cliente = clientes.find(c => c.id === clienteId);
+    if (cliente) {
+        document.getElementById('clientName').value = cliente.nome;
+        document.getElementById('phone').value = cliente.telefone;
+        document.getElementById('address').value = cliente.endereco;
+    }
+}
+
+// Atualizar a função loadClientes para popular o select
+async function loadClientes() {
+    try {
+        const response = await fetch(`${API_URL}/Clientes`);
+        clientes = await response.json();
+        displayClientes(clientes);
+        popularSelectClientes(); // 🔧 Adicionar esta linha
+    } catch (error) {
+        console.error('Erro ao carregar clientes:', error);
+        clientes = [];
+    }
+}
+
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('photoPreview');
+            const img = document.getElementById('photoPreviewImg');
+            if (img) img.src = e.target.result;
+            if (preview) preview.style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removerFoto() {
+    const preview = document.getElementById('photoPreview');
+    const photoInput = document.getElementById('servicePhoto');
+    if (preview) preview.style.display = 'none';
+    if (photoInput) photoInput.value = '';
 }

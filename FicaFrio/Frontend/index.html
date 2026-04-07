@@ -74,6 +74,19 @@
             <div class="form-container">
                 <h3 class="mb-3 text-center">Novo Serviço</h3>
                 <form id="serviceForm">
+                    <!-- Seleção de cliente existente -->
+<div class="mb-3">
+    <label class="form-label">Selecionar Cliente Existente</label>
+    <div style="display: flex; gap: 8px;">
+        <select id="selectCliente" class="form-control" style="flex: 1;">
+            <option value="">-- Selecione um cliente --</option>
+        </select>
+        <button type="button" class="btn btn-outline-primary" onclick="carregarClienteSelecionado()" style="white-space: nowrap;">
+            <i class="fas fa-user-check"></i> Carregar
+        </button>
+    </div>
+    <small class="text-muted">Ou preencha os campos abaixo para um novo cliente</small>
+</div>
                     <div class="mb-3">
                         <label class="form-label">Nome do Cliente</label>
                         <input type="text" id="clientName" class="form-control" required>
