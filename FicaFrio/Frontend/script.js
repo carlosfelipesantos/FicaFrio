@@ -81,9 +81,10 @@ function setupEventListeners() {
     const clienteForm = document.getElementById('clienteForm');
     if (clienteForm) clienteForm.addEventListener('submit', salvarCliente);
     
-    document.querySelectorAll('.period-btn-modern').forEach(btn => {
-    btn.addEventListener('click', () => loadFinancialReport(btn.dataset.period));
-});
+    // CORRIGIDO: agora usa .period-btn (classe correta do HTML)
+    document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.addEventListener('click', () => loadFinancialReport(btn.dataset.period));
+    });
     
     const phoneField = document.getElementById('phone');
     if (phoneField) phoneField.addEventListener('blur', buscarClientePorTelefone);
@@ -98,10 +99,10 @@ async function buscarClientePorTelefone() {
         const clientesEncontrados = await response.json();
         if (clientesEncontrados.length > 0) {
             const cliente = clientesEncontrados[0];
-            if (confirm(`Cliente ${cliente.nome} já existe! Carregar dados?`)) {
-                document.getElementById('clientName').value = cliente.nome;
-                document.getElementById('address').value = cliente.endereco;
-            }
+            // ALERT removido: não pergunta mais, apenas carrega os dados
+            console.log(`Cliente ${cliente.nome} encontrado. Dados carregados.`);
+            document.getElementById('clientName').value = cliente.nome;
+            document.getElementById('address').value = cliente.endereco;
         }
     } catch (error) {
         console.error('Erro na busca do cliente:', error);
@@ -248,7 +249,7 @@ async function saveService(event) {
         status: document.getElementById('status').value,
         temGarantia: document.getElementById('hasWarranty').checked,
         fimGarantia: document.getElementById('hasWarranty').checked ? document.getElementById('warrantyEnd').value : null,
-        clienteId: null  // 🔧 Adicionar clienteId (pode ser nulo por enquanto)
+        clienteId: null
     };
     
     const btnSubmit = event.target.querySelector('button[type="submit"]');
@@ -285,15 +286,14 @@ async function saveService(event) {
             });
         }
         
-        alert('✅ Serviço e gastos salvos com sucesso!');
+        console.log('✅ Serviço e gastos salvos com sucesso!');
         document.getElementById('serviceForm').reset();
         limparFormularioServico();
         await loadServices();
         await loadClientes();
         changeScreen('home');
     } catch (error) {
-        console.error(error);
-        alert('❌ Erro ao salvar: ' + error.message);
+        console.error('❌ Erro ao salvar:', error);
     } finally {
         btnSubmit.innerHTML = originalText;
         btnSubmit.disabled = false;
@@ -359,27 +359,25 @@ async function showServiceDetails(id) {
         new bootstrap.Modal(document.getElementById('serviceModal')).show();
     } catch (error) {
         console.error('Erro ao carregar detalhes:', error);
-        alert('Erro ao carregar detalhes do serviço');
     }
 }
 
 async function deletarServico(id) {
-    if (!confirm('Tem certeza que deseja excluir este serviço?')) return;
+    // Confirm removido: executa diretamente
     try {
         const response = await fetch(`${API_URL}/Services/${id}`, { method: 'DELETE' });
         if (response.ok) {
-            alert('✅ Serviço excluído com sucesso!');
+            console.log('✅ Serviço excluído com sucesso!');
             const modal = bootstrap.Modal.getInstance(document.getElementById('serviceModal'));
             if (modal) modal.hide();
             await loadServices();
             await loadClientes();
             if (currentScreen === 'services') displayAllServices(services);
         } else {
-            alert('❌ Erro ao excluir serviço');
+            console.error('❌ Erro ao excluir serviço');
         }
     } catch (error) {
-        console.error(error);
-        alert('Erro de conexão');
+        console.error('Erro de conexão:', error);
     }
 }
 
@@ -389,6 +387,7 @@ async function loadClientes() {
         const response = await fetch(`${API_URL}/Clientes`);
         clientes = await response.json();
         displayClientes(clientes);
+        popularSelectClientes(); // para o select no novo serviço
     } catch (error) {
         console.error('Erro ao carregar clientes:', error);
         clientes = [];
@@ -454,15 +453,14 @@ async function salvarCliente(event) {
             });
         }
         if (response.ok || response.status === 204) {
-            alert('✅ Cliente salvo com sucesso!');
+            console.log('✅ Cliente salvo com sucesso!');
             bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
             await loadClientes();
         } else {
-            alert('❌ Erro ao salvar cliente');
+            console.error('❌ Erro ao salvar cliente');
         }
     } catch (error) {
-        console.error(error);
-        alert('Erro de conexão');
+        console.error('Erro de conexão:', error);
     } finally {
         btn.innerHTML = original;
         btn.disabled = false;
@@ -514,8 +512,7 @@ async function verDetalhesCliente(id) {
         `;
         new bootstrap.Modal(document.getElementById('clienteDetalhesModal')).show();
     } catch (error) {
-        console.error(error);
-        alert('Erro ao carregar detalhes do cliente');
+        console.error('Erro ao carregar detalhes do cliente:', error);
     }
 }
 
@@ -542,20 +539,19 @@ function editarCliente(id) {
 }
 
 async function deletarCliente(id) {
-    if (!confirm('Tem certeza que deseja excluir este cliente? Se ele tiver serviços, não será possível.')) return;
+    // Confirm removido
     try {
         const response = await fetch(`${API_URL}/Clientes/${id}`, { method: 'DELETE' });
         if (response.ok) {
-            alert('✅ Cliente excluído com sucesso!');
+            console.log('✅ Cliente excluído com sucesso!');
             const modal = bootstrap.Modal.getInstance(document.getElementById('clienteDetalhesModal'));
             if (modal) modal.hide();
             await loadClientes();
         } else {
-            alert('❌ Não é possível excluir cliente que possui serviços');
+            console.error('❌ Não é possível excluir cliente que possui serviços');
         }
     } catch (error) {
-        console.error(error);
-        alert('Erro ao excluir cliente');
+        console.error('Erro ao excluir cliente:', error);
     }
 }
 
@@ -592,9 +588,9 @@ async function loadFinancialReport(period) {
             details.innerHTML += `<div class="detail-item"><span>📆 Data</span><span>${new Date().toLocaleDateString()}</span></div>`;
         }
         
-        document.querySelectorAll('.period-btn-modern').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.period === period);
-});
+        document.querySelectorAll('.period-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.period === period);
+        });
     } catch (error) {
         console.error('Erro ao carregar relatório:', error);
         document.getElementById('financeRevenue').innerHTML = formatCurrency(0);
@@ -608,7 +604,7 @@ async function loadFinancialReport(period) {
 async function salvarFinanceiro() {
     const valorServico = parseFloat(document.getElementById('valorServico').value);
     if (isNaN(valorServico) || valorServico <= 0) {
-        alert('Digite um valor de faturamento válido');
+        console.warn('Digite um valor de faturamento válido');
         return;
     }
     
@@ -623,24 +619,13 @@ async function salvarFinanceiro() {
         }
     });
     
-    // Aqui você pode implementar o envio para uma API específica de registros financeiros avulsos
-    // Como não há endpoint definido, vamos apenas mostrar um resumo e limpar o formulário
     const totalGastos = gastos.reduce((sum, g) => sum + g.valor, 0);
     const lucro = valorServico - totalGastos;
     
-    let msg = `✅ Registro salvo!\n\n`;
-    msg += `Faturamento: ${formatCurrency(valorServico)}\n`;
-    msg += `Gastos: ${formatCurrency(totalGastos)}\n`;
-    msg += `Lucro: ${formatCurrency(lucro)}`;
-    
+    console.log(`✅ Registro salvo! Faturamento: ${formatCurrency(valorServico)}, Gastos: ${formatCurrency(totalGastos)}, Lucro: ${formatCurrency(lucro)}`);
     if (gastos.length > 0) {
-        msg += `\n\nDetalhes dos gastos:\n`;
-        gastos.forEach(g => {
-            msg += `- ${g.descricao}: ${formatCurrency(g.valor)}\n`;
-        });
+        console.log('Detalhes dos gastos:', gastos);
     }
-    
-    alert(msg);
     
     // Limpar formulário
     document.getElementById('valorServico').value = '';
@@ -791,7 +776,7 @@ function carregarClienteSelecionado() {
     const clienteId = parseInt(select.value);
     
     if (!clienteId) {
-        alert('Selecione um cliente primeiro');
+        console.warn('Selecione um cliente primeiro');
         return;
     }
     
@@ -800,19 +785,6 @@ function carregarClienteSelecionado() {
         document.getElementById('clientName').value = cliente.nome;
         document.getElementById('phone').value = cliente.telefone;
         document.getElementById('address').value = cliente.endereco;
-    }
-}
-
-// Atualizar a função loadClientes para popular o select
-async function loadClientes() {
-    try {
-        const response = await fetch(`${API_URL}/Clientes`);
-        clientes = await response.json();
-        displayClientes(clientes);
-        popularSelectClientes(); // 🔧 Adicionar esta linha
-    } catch (error) {
-        console.error('Erro ao carregar clientes:', error);
-        clientes = [];
     }
 }
 

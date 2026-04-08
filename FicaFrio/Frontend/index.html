@@ -174,7 +174,7 @@
 <div id="financialScreen" class="screen">
     <div class="finance-wrapper">
         <div class="finance-header">
-            <h3 class="finance-title">📊 Resumo Financeiro</h3>
+            <h3 class="finance-title">Resumo Financeiro</h3>
             <p class="finance-subtitle">Acompanhe seus ganhos, gastos e lucros de forma clara</p>
         </div>
 
@@ -230,18 +230,18 @@
         <div id="financeForm" class="record-form" style="display: none;">
             <h4 class="form-title">Novo Lançamento</h4>
             <div class="form-group">
-                <label>💵 Faturamento (R$)</label>
+                <label>Faturamento (R$)</label>
                 <input type="number" id="valorServico" class="modern-input" step="0.01" placeholder="0,00" oninput="calcularLucro()">
             </div>
             <div class="form-group">
-                <label>📦 Gastos</label>
+                <label> Gastos</label>
                 <div id="financeExpenseContainer" class="expense-list"></div>
                 <button type="button" class="btn-add-expense-modern" onclick="addFinanceExpense()">
                     <i class="fas fa-plus"></i> Adicionar gasto
                 </button>
             </div>
             <div class="profit-preview">
-                <span>📈 Lucro estimado:</span>
+                <span> Lucro estimado:</span>
                 <strong id="lucroFinal">R$ 0,00</strong>
             </div>
             <div class="form-actions">
