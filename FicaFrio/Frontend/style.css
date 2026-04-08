@@ -964,3 +964,328 @@ button.btn-salvar-registro:hover {
 }
 
 
+
+
+/* ========== NOVA TELA FINANCEIRO ========== */
+.finance-wrapper {
+    background: white;
+    border-radius: 28px;
+    padding: 24px 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.finance-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.finance-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 6px;
+}
+
+.finance-subtitle {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+/* Cards modernos */
+.finance-cards-modern {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin-bottom: 32px;
+}
+
+.finance-card-modern {
+    flex: 1;
+    min-width: 140px;
+    background: white;
+    border-radius: 24px;
+    padding: 18px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid #f0f0f0;
+    transition: all 0.2s;
+}
+
+.finance-card-modern:active {
+    transform: scale(0.98);
+}
+
+.finance-card-modern.revenue {
+    border-left: 4px solid #10b981;
+}
+
+.finance-card-modern.expenses {
+    border-left: 4px solid #ef4444;
+}
+
+.finance-card-modern.profit {
+    border-left: 4px solid #3b82f6;
+}
+
+.card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+
+.finance-card-modern.revenue .card-icon {
+    background: #e8f7ef;
+    color: #10b981;
+}
+
+.finance-card-modern.expenses .card-icon {
+    background: #fee9e6;
+    color: #ef4444;
+}
+
+.finance-card-modern.profit .card-icon {
+    background: #e8edfe;
+    color: #3b82f6;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-label {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.card-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1f2937;
+}
+
+/* Seletor de período */
+.period-container {
+    margin: 24px 0;
+}
+
+.period-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+.period-btn-modern {
+    background: #f3f4f6;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.period-btn-modern.active {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+}
+
+.period-btn-modern:active {
+    transform: scale(0.96);
+}
+
+/* Botão adicionar registro */
+.add-record-wrapper {
+    margin: 20px 0 16px;
+    text-align: center;
+}
+
+.btn-add-record {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+    box-shadow: 0 4px 12px rgba(59,130,246,0.2);
+}
+
+.btn-add-record:active {
+    transform: scale(0.97);
+}
+
+/* Formulário de registro */
+.record-form {
+    background: #f9fafb;
+    border-radius: 24px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.form-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1f2937;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.modern-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    font-size: 15px;
+    background: white;
+    transition: 0.2s;
+}
+
+.modern-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+.expense-list {
+    margin-bottom: 12px;
+}
+
+.expense-item-modern {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.expense-item-modern input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: white;
+}
+
+.expense-item-modern button {
+    background: #ef4444;
+    border: none;
+    color: white;
+    width: 36px;
+    border-radius: 14px;
+    cursor: pointer;
+}
+
+.btn-add-expense-modern {
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    padding: 8px 16px;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-add-expense-modern:hover {
+    background: #e5e7eb;
+}
+
+.profit-preview {
+    background: #e8edfe;
+    border-radius: 20px;
+    padding: 12px 16px;
+    text-align: center;
+    margin: 16px 0;
+    font-weight: 500;
+}
+
+.profit-preview span {
+    color: #4b5563;
+}
+
+.profit-preview strong {
+    color: #3b82f6;
+    font-size: 18px;
+    margin-left: 8px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.btn-cancel {
+    flex: 1;
+    background: #f3f4f6;
+    border: none;
+    padding: 12px;
+    border-radius: 40px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-save {
+    flex: 1;
+    background: #10b981;
+    border: none;
+    padding: 12px;
+    border-radius: 40px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+}
+
+/* Detalhes financeiros */
+.financial-details-modern {
+    background: #f9fafb;
+    border-radius: 20px;
+    padding: 16px;
+    margin-top: 20px;
+}
+
+/* Responsivo */
+@media (max-width: 640px) {
+    .finance-cards-modern {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .finance-card-modern {
+        width: 100%;
+    }
+    .period-buttons {
+        gap: 6px;
+    }
+    .period-btn-modern {
+        padding: 6px 14px;
+        font-size: 12px;
+    }
+}

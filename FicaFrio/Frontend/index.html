@@ -170,57 +170,92 @@
             </div>
         </div>
 
-        <!-- TELA FINANCEIRO -->
-        <div id="financialScreen" class="screen">
-            <div class="form-container">
-                <h3 class="mb-3 text-center">Financeiro</h3>
-                
-                <div class="finance-cards">
-                    <div class="finance-card revenue">
-                        <div class="finance-icon"><i class="fas fa-chart-line"></i></div>
-                        <div class="finance-label">Faturamento</div>
-                        <div class="finance-value" id="financeRevenue">R$ 0,00</div>
-                    </div>
-                    <div class="finance-card expenses">
-                        <div class="finance-icon"><i class="fas fa-money-bill-wave"></i></div>
-                        <div class="finance-label">Gastos</div>
-                        <div class="finance-value" id="financeExpenses">R$ 0,00</div>
-                    </div>
-                    <div class="finance-card profit">
-                        <div class="finance-icon"><i class="fas fa-chart-bar"></i></div>
-                        <div class="finance-label">Lucro</div>
-                        <div class="finance-value" id="financeProfit">R$ 0,00</div>
-                    </div>
+      <!-- TELA FINANCEIRO - VERSÃO MAIS BONITA -->
+<div id="financialScreen" class="screen">
+    <div class="finance-wrapper">
+        <div class="finance-header">
+            <h3 class="finance-title">📊 Resumo Financeiro</h3>
+            <p class="finance-subtitle">Acompanhe seus ganhos, gastos e lucros de forma clara</p>
+        </div>
+
+        <!-- Cards principais com design moderno -->
+        <div class="finance-cards-modern">
+            <div class="finance-card-modern revenue">
+                <div class="card-icon">
+                    <i class="fas fa-chart-line"></i>
                 </div>
-
-                <div class="period-selector">
-                    <h4 class="mb-2"> Período</h4>
-                    <div class="btn-group w-100 mb-3" role="group">
-                        <button class="btn btn-outline-primary period-btn" data-period="daily">Hoje</button>
-                        <button class="btn btn-outline-primary period-btn" data-period="weekly">Semana</button>
-                        <button class="btn btn-outline-primary period-btn" data-period="monthly">Mês</button>
-                        <button class="btn btn-outline-primary period-btn" data-period="yearly">Ano</button>
-                    </div>
+                <div class="card-content">
+                    <span class="card-label">Faturamento</span>
+                    <span class="card-value" id="financeRevenue">R$ 0,00</span>
                 </div>
-
-                <button class="btn-new-service" onclick="abrirFinanceiro()">
-                    + Adicionar Registro
-                </button>
-
-                <div id="financeForm" style="display:none;">
-                    <label>Faturamento (R$)</label>
-                    <input type="number" id="valorServico" class="form-control" oninput="calcularLucro()">
-                    <h4 class="mt-3">Gastos</h4>
-                    <div id="financeExpenseContainer"></div>
-                    <button type="button" class="btn btn-sm btn-success mt-2" onclick="addFinanceExpense()">+ Adicionar gasto</button>
-                    <h3 id="lucroFinal" class="mt-3">Lucro: R$ 0</h3>
-                    <button class="btn btn-primary w-100 mt-3" onclick="salvarFinanceiro()">Salvar Registro</button>
+            </div>
+            <div class="finance-card-modern expenses">
+                <div class="card-icon">
+                    <i class="fas fa-receipt"></i>
                 </div>
-
-                <div id="financialDetails" class="financial-details"></div>
+                <div class="card-content">
+                    <span class="card-label">Gastos</span>
+                    <span class="card-value" id="financeExpenses">R$ 0,00</span>
+                </div>
+            </div>
+            <div class="finance-card-modern profit">
+                <div class="card-icon">
+                    <i class="fas fa-coins"></i>
+                </div>
+                <div class="card-content">
+                    <span class="card-label">Lucro Líquido</span>
+                    <span class="card-value" id="financeProfit">R$ 0,00</span>
+                </div>
             </div>
         </div>
+
+        <!-- Seletor de período estilizado -->
+        <div class="period-container">
+            <div class="period-buttons">
+                <button class="period-btn-modern" data-period="daily">Hoje</button>
+                <button class="period-btn-modern" data-period="weekly">Semana</button>
+                <button class="period-btn-modern" data-period="monthly">Mês</button>
+                <button class="period-btn-modern" data-period="yearly">Ano</button>
+            </div>
+        </div>
+
+        <!-- Botão para adicionar registro manual -->
+        <div class="add-record-wrapper">
+            <button class="btn-add-record" onclick="abrirFinanceiro()">
+                <i class="fas fa-plus-circle"></i> Adicionar Registro
+            </button>
+        </div>
+
+        <!-- Formulário de registro manual (escondido inicialmente) -->
+        <div id="financeForm" class="record-form" style="display: none;">
+            <h4 class="form-title">Novo Lançamento</h4>
+            <div class="form-group">
+                <label>💵 Faturamento (R$)</label>
+                <input type="number" id="valorServico" class="modern-input" step="0.01" placeholder="0,00" oninput="calcularLucro()">
+            </div>
+            <div class="form-group">
+                <label>📦 Gastos</label>
+                <div id="financeExpenseContainer" class="expense-list"></div>
+                <button type="button" class="btn-add-expense-modern" onclick="addFinanceExpense()">
+                    <i class="fas fa-plus"></i> Adicionar gasto
+                </button>
+            </div>
+            <div class="profit-preview">
+                <span>📈 Lucro estimado:</span>
+                <strong id="lucroFinal">R$ 0,00</strong>
+            </div>
+            <div class="form-actions">
+                <button class="btn-cancel" onclick="fecharFinanceiro()">Cancelar</button>
+                <button class="btn-save" onclick="salvarFinanceiro()">Salvar Registro</button>
+            </div>
+        </div>
+
+        <!-- Detalhes extras (opcional) -->
+        <div id="financialDetails" class="financial-details-modern">
+            <!-- Os detalhes serão preenchidos via JS -->
+        </div>
     </div>
+</div>
 
     <!-- Navegação Inferior -->
     <div class="bottom-nav">

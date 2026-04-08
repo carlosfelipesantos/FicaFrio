@@ -81,9 +81,9 @@ function setupEventListeners() {
     const clienteForm = document.getElementById('clienteForm');
     if (clienteForm) clienteForm.addEventListener('submit', salvarCliente);
     
-    document.querySelectorAll('.period-btn').forEach(btn => {
-        btn.addEventListener('click', () => loadFinancialReport(btn.dataset.period));
-    });
+    document.querySelectorAll('.period-btn-modern').forEach(btn => {
+    btn.addEventListener('click', () => loadFinancialReport(btn.dataset.period));
+});
     
     const phoneField = document.getElementById('phone');
     if (phoneField) phoneField.addEventListener('blur', buscarClientePorTelefone);
@@ -592,9 +592,9 @@ async function loadFinancialReport(period) {
             details.innerHTML += `<div class="detail-item"><span>📆 Data</span><span>${new Date().toLocaleDateString()}</span></div>`;
         }
         
-        document.querySelectorAll('.period-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.period === period);
-        });
+        document.querySelectorAll('.period-btn-modern').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.period === period);
+});
     } catch (error) {
         console.error('Erro ao carregar relatório:', error);
         document.getElementById('financeRevenue').innerHTML = formatCurrency(0);
