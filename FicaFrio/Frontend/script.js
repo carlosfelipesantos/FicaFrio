@@ -81,13 +81,39 @@ function setupEventListeners() {
     const clienteForm = document.getElementById('clienteForm');
     if (clienteForm) clienteForm.addEventListener('submit', salvarCliente);
     
-    // CORRIGIDO: agora usa .period-btn (classe correta do HTML)
     document.querySelectorAll('.period-btn').forEach(btn => {
         btn.addEventListener('click', () => loadFinancialReport(btn.dataset.period));
     });
     
     const phoneField = document.getElementById('phone');
     if (phoneField) phoneField.addEventListener('blur', buscarClientePorTelefone);
+    
+    // 🔥 Listener para esconder/mostrar campos ao selecionar cliente existente
+    const selectCliente = document.getElementById('selectCliente');
+    if (selectCliente) {
+        selectCliente.addEventListener('change', function() {
+            const clienteFields = document.getElementById('clienteFields');
+            if (!clienteFields) return;
+
+            if (this.value) {
+                // Cliente selecionado → esconde os campos
+                clienteFields.style.display = 'none';
+                // Preenche automaticamente os campos (opcional)
+                const cliente = clientes.find(c => c.id == this.value);
+                if (cliente) {
+                    document.getElementById('clientName').value = cliente.nome;
+                    document.getElementById('phone').value = cliente.telefone;
+                    document.getElementById('address').value = cliente.endereco;
+                }
+            } else {
+                // Nenhum cliente → mostra os campos e limpa
+                clienteFields.style.display = 'block';
+                document.getElementById('clientName').value = '';
+                document.getElementById('phone').value = '';
+                document.getElementById('address').value = '';
+            }
+        });
+    }
 }
 
 // ==================== BUSCAR CLIENTE POR TELEFONE ====================
@@ -143,10 +169,18 @@ function updateStats() {
     });
     const weekRevenue = weekServices.reduce((sum, s) => sum + s.valor, 0);
     
-    document.getElementById('weekRevenue').innerHTML = formatCurrency(weekRevenue);
-    document.getElementById('weekExpenses').innerHTML = totalClientesUnicos;
-    document.getElementById('weekProfit').innerHTML = totalServicos;
-    document.getElementById('completedCount').innerHTML = weekServices.length;
+    // Verificar se os elementos existem antes de atualizar
+    const weekRevenueEl = document.getElementById('weekRevenue');
+    if (weekRevenueEl) weekRevenueEl.innerHTML = formatCurrency(weekRevenue);
+    
+    const weekExpensesEl = document.getElementById('weekExpenses');
+    if (weekExpensesEl) weekExpensesEl.innerHTML = totalClientesUnicos;
+    
+    const weekProfitEl = document.getElementById('weekProfit');
+    if (weekProfitEl) weekProfitEl.innerHTML = totalServicos;
+    
+    const completedCountEl = document.getElementById('completedCount');
+    if (completedCountEl) completedCountEl.innerHTML = weekServices.length;
 }
 
 async function loadHomeData() {
@@ -221,13 +255,18 @@ function limparFormularioServico() {
     // Reset garantia
     document.getElementById('hasWarranty').checked = false;
     document.getElementById('warrantyEnd').style.display = 'none';
-    // Reset status
-    initStatusButtons();
+     initStatusButtons();
+   
+     const clienteFields = document.getElementById('clienteFields');
+    if (clienteFields) clienteFields.style.display = 'block';
+    const selectCliente = document.getElementById('selectCliente');
+    if (selectCliente) selectCliente.value = '';
+   
 }
 
 async function saveService(event) {
     event.preventDefault();
-    
+
     // Coletar gastos dos campos dinâmicos
     const gastos = [];
     const expenseItems = document.querySelectorAll('#expenseContainer .expense-item');
@@ -238,46 +277,80 @@ async function saveService(event) {
             gastos.push({ descricao: desc, valor: valor });
         }
     });
-    
+
+    // Dados do serviço
+    const nomeCliente = document.getElementById('clientName').value;
+    const telefoneCliente = document.getElementById('phone').value;
+    const endereco = document.getElementById('address').value;
+
+    let clienteId = null;
+
+    // 1. Verificar se foi selecionado um cliente existente
+    const selectCliente = document.getElementById('selectCliente');
+    if (selectCliente && selectCliente.value) {
+        clienteId = parseInt(selectCliente.value);
+    } else {
+        // 2. Criar novo cliente com os dados preenchidos
+        const novoCliente = {
+            nome: nomeCliente,
+            telefone: telefoneCliente,
+            endereco: endereco
+        };
+        try {
+            const resCliente = await fetch(`${API_URL}/Clientes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(novoCliente)
+            });
+            if (!resCliente.ok) throw new Error('Erro ao criar cliente');
+            const clienteCriado = await resCliente.json();
+            clienteId = clienteCriado.id;
+        } catch (error) {
+            console.error('Erro ao criar cliente:', error);
+            return; // Interrompe o salvamento
+        }
+    }
+
+    // 3. Montar objeto do serviço em PascalCase
     const service = {
-        nomeCliente: document.getElementById('clientName').value,
-        telefoneCliente: document.getElementById('phone').value,
-        endereco: document.getElementById('address').value,
-        descricaoServico: document.getElementById('problemDesc').value,
-        valor: parseFloat(document.getElementById('amount').value),
-        dataServico: document.getElementById('serviceDate').value,
-        status: document.getElementById('status').value,
-        temGarantia: document.getElementById('hasWarranty').checked,
-        fimGarantia: document.getElementById('hasWarranty').checked ? document.getElementById('warrantyEnd').value : null,
-        clienteId: null
+        NomeCliente: nomeCliente,
+        TelefoneCliente: telefoneCliente,
+        Endereco: endereco,
+        DescricaoServico: document.getElementById('problemDesc').value,
+        Valor: parseFloat(document.getElementById('amount').value),
+        DataServico: document.getElementById('serviceDate').value,
+        Status: document.getElementById('status').value,
+        TemGarantia: document.getElementById('hasWarranty').checked,
+        FimGarantia: document.getElementById('hasWarranty').checked ? document.getElementById('warrantyEnd').value : null,
+        ClienteId: clienteId
     };
-    
+
     const btnSubmit = event.target.querySelector('button[type="submit"]');
     const originalText = btnSubmit.innerHTML;
     btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
     btnSubmit.disabled = true;
-    
+
     try {
         const response = await fetch(`${API_URL}/Services`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(service)
         });
-        
+
         if (!response.ok) {
             const errorText = await response.text();
             console.error('Erro do servidor:', errorText);
             throw new Error('Erro ao salvar serviço');
         }
         const savedService = await response.json();
-        
+
         // Salvar gastos
         for (const gasto of gastos) {
             const gastoData = {
-                serviceId: savedService.id,
-                descricacao: gasto.descricao,
-                valor: gasto.valor,
-                dataGasto: new Date().toISOString()
+                ServiceId: savedService.id,
+                Descricacao: gasto.descricao,
+                Valor: gasto.valor,
+                DataGasto: new Date().toISOString()
             };
             await fetch(`${API_URL}/Gastos`, {
                 method: 'POST',
@@ -285,7 +358,7 @@ async function saveService(event) {
                 body: JSON.stringify(gastoData)
             });
         }
-        
+
         console.log('✅ Serviço e gastos salvos com sucesso!');
         document.getElementById('serviceForm').reset();
         limparFormularioServico();
@@ -387,7 +460,7 @@ async function loadClientes() {
         const response = await fetch(`${API_URL}/Clientes`);
         clientes = await response.json();
         displayClientes(clientes);
-        popularSelectClientes(); // para o select no novo serviço
+        popularSelectClientes(); // já deve existir
     } catch (error) {
         console.error('Erro ao carregar clientes:', error);
         clientes = [];
