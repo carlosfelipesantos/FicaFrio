@@ -6,20 +6,7 @@ let currentScreen = 'home';
 let servicePhotoBase64 = null;
 let clientPhotoBase64 = null;
 
-// ==================== REGISTROS MANUAIS ====================
-let registrosManuais = [];
 
-function carregarRegistrosManuais() {
-    const saved = localStorage.getItem('registrosFinanceiros');
-    if (saved) {
-        registrosManuais = JSON.parse(saved);
-    }
-}
-
-function salvarRegistroManual(registro) {
-    registrosManuais.push(registro);
-    localStorage.setItem('registrosFinanceiros', JSON.stringify(registrosManuais));
-}
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
@@ -28,7 +15,20 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     updateDateTime();
     setInterval(updateDateTime, 60000);
+
+
+    // 🔥 Corrige scroll travado em todos os modais
+document.addEventListener('hidden.bs.modal', function() {
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach(backdrop => backdrop.remove());
+    document.body.classList.remove('modal-open');
 });
+
+});
+
+
 
 // ==================== NAVEGAÇÃO ====================
 function setupNavigation() {
@@ -457,6 +457,8 @@ if (gastos.length > 0) {
 
 // Exibir detalhes do serviço
 async function showServiceDetails(id) {
+    console.log('Abrindo detalhes do serviço ID:', id);  // 🔥 Verificar se o ID vem correto
+    
     try {
         const [serviceRes, gastosRes] = await Promise.all([
             fetch(`${API_URL}/Services/${id}`),
@@ -464,6 +466,8 @@ async function showServiceDetails(id) {
         ]);
         const service = await serviceRes.json();
         const gastosLista = await gastosRes.json();
+        
+        console.log('Serviço carregado, ID:', service.id);  // 🔥 Verificar ID do serviço
         
         const totalGastos = gastosLista.reduce((sum, g) => sum + g.valor, 0);
         const lucroReal = service.valor - totalGastos;
@@ -517,11 +521,9 @@ async function showServiceDetails(id) {
             </div>
         `;
         
-        // 🔥 Cria o modal e garante que o backdrop seja removido ao fechar
         const modalElement = document.getElementById('serviceModal');
         const modal = new bootstrap.Modal(modalElement);
         
-        // Remove qualquer backdrop existente antes de abrir
         const existingBackdrop = document.querySelector('.modal-backdrop');
         if (existingBackdrop) {
             existingBackdrop.remove();
@@ -530,14 +532,13 @@ async function showServiceDetails(id) {
         
         modal.show();
         
-        // 🔥 Garante que o backdrop seja removido quando o modal for fechado
         modalElement.addEventListener('hidden.bs.modal', function() {
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) {
                 backdrop.remove();
             }
             document.body.classList.remove('modal-open');
-        });
+        }, { once: true });  // 🔥 Adiciona { once: true } para executar apenas uma vez
         
     } catch (error) {
         console.error('Erro ao carregar detalhes:', error);
@@ -545,24 +546,37 @@ async function showServiceDetails(id) {
 }
 
 async function deletarServico(id) {
-    // Confirm removido: executa diretamente
+    console.log('Tentando excluir serviço ID:', id);  // 🔥 Verificar o ID recebido
+    
+    if (!id || id === 'undefined') {
+        console.error('ID inválido para exclusão');
+        return;
+    }
+    
     try {
         const response = await fetch(`${API_URL}/Services/${id}`, { method: 'DELETE' });
         if (response.ok) {
             console.log('✅ Serviço excluído com sucesso!');
             const modal = bootstrap.Modal.getInstance(document.getElementById('serviceModal'));
             if (modal) modal.hide();
+            
+            // Força restauração do scroll
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            document.body.classList.remove('modal-open');
+            
             await loadServices();
             await loadClientes();
             if (currentScreen === 'services') displayAllServices(services);
         } else {
-            console.error('❌ Erro ao excluir serviço');
+            console.error('❌ Erro ao excluir serviço, status:', response.status);
         }
     } catch (error) {
         console.error('Erro de conexão:', error);
     }
 }
-
 // ==================== CLIENTES ====================
 async function loadClientes() {
     try {
@@ -745,7 +759,15 @@ function verServicoCliente(servicoId) {
 
 function filtrarClientes() {
     const term = document.getElementById('searchClienteInput').value.toLowerCase();
-    const filtered = clientes.filter(c => c.nome.toLowerCase().includes(term) || c.telefone.includes(term));
+    // 🔥 Remove caracteres não numéricos para comparar telefone
+    const termNumerico = term.replace(/\D/g, '');
+    
+    const filtered = clientes.filter(c => {
+        const telefoneNumerico = c.telefone.replace(/\D/g, '');
+        return c.nome.toLowerCase().includes(term) || 
+               c.telefone.toLowerCase().includes(term) ||
+               telefoneNumerico.includes(termNumerico);
+    });
     displayClientes(filtered);
 }
 
@@ -753,18 +775,6 @@ function filtrarClientes() {
 const financialCache = {};
 
 async function loadFinancialReport(period) {
-    // Carregar registros manuais do localStorage
-    carregarRegistrosManuais();
-    
-    const now = Date.now();
-    if (financialCache[period] && (now - financialCache[period].timestamp) < 5000) {
-        const data = financialCache[period].data;
-        // 🔥 Adicionar registros manuais aos dados
-        const dadosComManuais = adicionarRegistrosManuais(data, period);
-        updateFinancialUI(dadosComManuais, period);
-        return;
-    }
-    
     if (loadFinancialReport.loading) return;
     loadFinancialReport.loading = true;
     
@@ -777,49 +787,240 @@ async function loadFinancialReport(period) {
         if (expensesEl) expensesEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         if (profitEl) profitEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
+        // Buscar os dados financeiros da API
         const response = await fetch(`${API_URL}/Services/financial/${period}`);
         const data = await response.json();
         
-        // 🔥 Adicionar registros manuais
-        const dadosComManuais = adicionarRegistrosManuais(data, period);
+        // 🔥 Buscar todos os serviços para calcular gastos corretamente
+        const servicesResponse = await fetch(`${API_URL}/Services`);
+        const allServices = await servicesResponse.json();
         
-        financialCache[period] = {
-            data: dadosComManuais,
-            timestamp: Date.now()
-        };
+        // Calcular gastos totais do período
+        let totalGastos = 0;
+        let totalFaturamento = 0;
+        let totalServicos = 0;
+        let totalConcluidos = 0;
         
-        updateFinancialUI(dadosComManuais, period);
+        const hoje = new Date();
+        let startDate, endDate;
+        
+        switch(period) {
+            case 'daily':
+                startDate = new Date(hoje.setHours(0,0,0,0));
+                endDate = new Date(hoje.setHours(23,59,59,999));
+                break;
+            case 'weekly':
+                startDate = new Date(hoje);
+                startDate.setDate(hoje.getDate() - hoje.getDay() + 1);
+                startDate.setHours(0,0,0,0);
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+                endDate.setHours(23,59,59,999);
+                break;
+            case 'monthly':
+                startDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                endDate = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+                endDate.setHours(23,59,59,999);
+                break;
+            case 'yearly':
+                startDate = new Date(hoje.getFullYear(), 0, 1);
+                endDate = new Date(hoje.getFullYear(), 11, 31);
+                endDate.setHours(23,59,59,999);
+                break;
+            default:
+                startDate = new Date(hoje.setHours(0,0,0,0));
+                endDate = new Date(hoje.setHours(23,59,59,999));
+        }
+        
+        // Filtrar serviços do período
+        const servicosDoPeriodo = allServices.filter(s => {
+            const dataServico = new Date(s.dataServico);
+            return dataServico >= startDate && dataServico <= endDate;
+        });
+        
+        // Calcular totais
+        servicosDoPeriodo.forEach(servico => {
+            totalServicos++;
+            if (servico.status === 'Completo') {
+                totalConcluidos++;
+                totalFaturamento += servico.valor;
+                // Somar gastos do serviço
+                if (servico.gastos && servico.gastos.length > 0) {
+                    totalGastos += servico.gastos.reduce((sum, g) => sum + g.valor, 0);
+                }
+            }
+        });
+        
+        const lucroReal = totalFaturamento - totalGastos;
+        
+        // Atualizar os cards
+        if (revenueEl) revenueEl.innerHTML = formatCurrency(totalFaturamento);
+        if (expensesEl) expensesEl.innerHTML = formatCurrency(totalGastos);
+        if (profitEl) profitEl.innerHTML = formatCurrency(lucroReal);
+        
+        // Atualizar detalhes
+        const detailsContainer = document.getElementById('financialDetails');
+        if (detailsContainer) {
+            const pendingServices = totalServicos - totalConcluidos;
+            detailsContainer.innerHTML = `
+                <div class="detail-item"><span>📊 Total de Serviços</span><span>${totalServicos}</span></div>
+                <div class="detail-item"><span>✅ Serviços Concluídos</span><span class="completed">${totalConcluidos}</span></div>
+                <div class="detail-item"><span>⏳ Serviços Pendentes</span><span class="pending">${pendingServices}</span></div>
+                <div class="detail-item"><span>📅 Período</span><span>${getPeriodText(period)}</span></div>
+            `;
+            if (period === 'daily') {
+                detailsContainer.innerHTML += `<div class="detail-item"><span>📆 Data</span><span>${new Date().toLocaleDateString()}</span></div>`;
+            }
+        }
+        
+        // Marcar botão ativo
+        document.querySelectorAll('.period-btn-modern').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.period === period) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Carregar lista de serviços do período
+        await carregarServicosDoPeriodo(period);
+        
     } catch (error) {
         console.error('Erro ao carregar relatório:', error);
-        // ... resto do erro
+        const revenueEl = document.getElementById('financeRevenue');
+        const expensesEl = document.getElementById('financeExpenses');
+        const profitEl = document.getElementById('financeProfit');
+        if (revenueEl) revenueEl.innerHTML = formatCurrency(0);
+        if (expensesEl) expensesEl.innerHTML = formatCurrency(0);
+        if (profitEl) profitEl.innerHTML = formatCurrency(0);
+        
+        const detailsContainer = document.getElementById('financialDetails');
+        if (detailsContainer) {
+            detailsContainer.innerHTML = '<div class="alert alert-danger">Erro ao carregar dados financeiros</div>';
+        }
     } finally {
         loadFinancialReport.loading = false;
     }
 }
 
-function adicionarRegistrosManuais(data, period) {
-    let totalManualRevenue = 0;
-    let totalManualExpenses = 0;
-    
-    const hoje = new Date();
-    const inicioDoPeriodo = getInicioPeriodo(period, hoje);
-    const fimDoPeriodo = getFimPeriodo(period, hoje);
-    
-    registrosManuais.forEach(reg => {
-        const dataRegistro = new Date(reg.data);
-        if (dataRegistro >= inicioDoPeriodo && dataRegistro <= fimDoPeriodo) {
-            totalManualRevenue += reg.valor || 0;
-            totalManualExpenses += reg.gastos || 0;
+// 🔥 Nova função: Carregar serviços do período selecionado
+async function carregarServicosDoPeriodo(period) {
+    try {
+        const hoje = new Date();
+        let startDate, endDate;
+        
+        switch(period) {
+            case 'daily':
+                startDate = new Date(hoje.setHours(0,0,0,0));
+                endDate = new Date(hoje.setHours(23,59,59,999));
+                break;
+            case 'weekly':
+                startDate = new Date(hoje);
+                startDate.setDate(hoje.getDate() - hoje.getDay() + 1);
+                startDate.setHours(0,0,0,0);
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+                endDate.setHours(23,59,59,999);
+                break;
+            case 'monthly':
+                startDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                endDate = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+                endDate.setHours(23,59,59,999);
+                break;
+            case 'yearly':
+                startDate = new Date(hoje.getFullYear(), 0, 1);
+                endDate = new Date(hoje.getFullYear(), 11, 31);
+                endDate.setHours(23,59,59,999);
+                break;
+            default:
+                startDate = new Date(hoje.setHours(0,0,0,0));
+                endDate = new Date(hoje.setHours(23,59,59,999));
         }
+        
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
+        
+        const response = await fetch(`${API_URL}/Services/period?start=${startStr}&end=${endStr}`);
+        const servicosDoPeriodo = await response.json();
+        
+        exibirListaServicosFaturamento(servicosDoPeriodo, period);
+        
+    } catch (error) {
+        console.error('Erro ao carregar serviços do período:', error);
+    }
+}
+
+// 🔥 Nova função: Exibir lista de serviços que compõem o faturamento
+function exibirListaServicosFaturamento(servicos, period) {
+    const container = document.getElementById('listaFaturamentoContainer');
+    if (!container) return;
+    
+    const tituloPeriodo = getPeriodText(period);
+    const servicosConcluidos = servicos.filter(s => s.status === 'Completo');
+    const totalFaturamento = servicosConcluidos.reduce((sum, s) => sum + s.valor, 0);
+    const totalGastos = servicosConcluidos.reduce((sum, s) => {
+        const gastosServico = s.gastos?.reduce((gSum, g) => gSum + g.valor, 0) || 0;
+        return sum + gastosServico;
+    }, 0);
+    const totalLucro = totalFaturamento - totalGastos;
+    
+    if (servicosConcluidos.length === 0) {
+        container.innerHTML = `
+            <div class="lista-faturamento">
+                <div class="lista-header">
+                    <h4>📋 Serviços que compõem o faturamento (${tituloPeriodo})</h4>
+                    <span class="total-periodo">Total: ${formatCurrency(totalFaturamento)}</span>
+                </div>
+                <div class="lista-vazia">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Nenhum serviço concluído neste período</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="lista-faturamento">
+            <div class="lista-header">
+                <h4>📋 Serviços que compõem o faturamento (${tituloPeriodo})</h4>
+                <div class="totais-periodo">
+                    <span class="total-faturamento">💰 Faturamento: ${formatCurrency(totalFaturamento)}</span>
+                    <span class="total-gastos">💸 Gastos: ${formatCurrency(totalGastos)}</span>
+                    <span class="total-lucro">📈 Lucro: ${formatCurrency(totalLucro)}</span>
+                </div>
+            </div>
+            <div class="lista-itens">
+    `;
+    
+    servicosConcluidos.forEach(servico => {
+        const totalGastosServico = servico.gastos?.reduce((sum, g) => sum + g.valor, 0) || 0;
+        const lucroServico = servico.valor - totalGastosServico;
+        
+        html += `
+            <div class="item-faturamento" onclick="showServiceDetails(${servico.id})">
+                <div class="item-info">
+                    <div class="item-cliente">${servico.nomeCliente}</div>
+                    <div class="item-descricao">${servico.descricaoServico.substring(0, 50)}${servico.descricaoServico.length > 50 ? '...' : ''}</div>
+                    <div class="item-data">📅 ${new Date(servico.dataServico).toLocaleDateString()}</div>
+                </div>
+                <div class="item-valores">
+                    <div class="item-valor">💰 ${formatCurrency(servico.valor)}</div>
+                    <div class="item-gastos">💸 Gastos: ${formatCurrency(totalGastosServico)}</div>
+                    <div class="item-lucro">📈 Lucro: ${formatCurrency(lucroServico)}</div>
+                </div>
+            </div>
+        `;
     });
     
-    return {
-        ...data,
-        revenue: (data.revenue || 0) + totalManualRevenue,
-        expenses: (data.expenses || 0) + totalManualExpenses,
-        profit: (data.profit || 0) + (totalManualRevenue - totalManualExpenses)
-    };
+    html += `
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
 }
+
+
 
 function getInicioPeriodo(period, date) {
     switch(period) {
@@ -887,60 +1088,8 @@ function updateFinancialUI(data, period) {
     });
 }
 
-// Função para salvar registro manual (financeiro)
-async function salvarFinanceiro() {
-    const valorServico = parseFloat(document.getElementById('valorServico').value);
-    if (isNaN(valorServico) || valorServico <= 0) {
-        console.warn('Digite um valor de faturamento válido');
-        return;
-    }
-    
-    const gastos = [];
-    const expenseItems = document.querySelectorAll('#financeExpenseContainer .expense-item');
-    expenseItems.forEach(item => {
-        const desc = item.querySelector('input[type="text"]').value;
-        const valor = parseFloat(item.querySelector('input[type="number"]').value);
-        if (desc && !isNaN(valor) && valor > 0) {
-            gastos.push({ descricao: desc, valor: valor });
-        }
-    });
-    
-    const totalGastos = gastos.reduce((sum, g) => sum + g.valor, 0);
-    
-    // 🔥 Salvar registro manual
-    const novoRegistro = {
-        id: Date.now(),
-        valor: valorServico,
-        gastos: totalGastos,
-        data: new Date().toISOString(),
-        descricao: 'Registro manual'
-    };
-    
-    salvarRegistroManual(novoRegistro);
-    
-    console.log(`✅ Registro salvo! Faturamento: ${formatCurrency(valorServico)}, Gastos: ${formatCurrency(totalGastos)}`);
-    
-    // Limpar formulário
-    document.getElementById('valorServico').value = '';
-    document.getElementById('financeExpenseContainer').innerHTML = '';
-    document.getElementById('lucroFinal').innerText = 'Lucro: R$ 0';
-    fecharFinanceiro();
-    
-    // 🔥 Limpar cache e recarregar
-    const activePeriod = document.querySelector('.period-btn-modern.active')?.dataset.period || 'monthly';
-    financialCache[activePeriod] = null;
-    await loadFinancialReport(activePeriod);
-}
 
-function fecharFinanceiro() {
-    const form = document.getElementById('financeForm');
-    const btn = document.querySelector('#financialScreen .btn-new-service');
-    if (form) form.style.display = 'none';
-    if (btn) {
-        btn.innerHTML = '<i class="fas fa-plus-circle"></i> Adicionar Registro';
-        btn.style.background = "linear-gradient(135deg, #28a745 0%, #20c997 100%)";
-    }
-}
+
 
 // ==================== UTILITÁRIOS ====================
 function isInWarranty(service) {
@@ -1021,41 +1170,7 @@ function addExpense() {
     container.appendChild(div);
 }
 
-// Financeiro toggle
-function abrirFinanceiro() {
-    const form = document.getElementById("financeForm");
-    const btn = event.currentTarget;
-    if (form.style.display === "none" || form.style.display === "") {
-        form.style.display = "flex";
-        btn.innerHTML = '<i class="fas fa-minus-circle"></i> Fechar Registro';
-        btn.style.background = "linear-gradient(135deg, #dc3545 0%, #c82333 100%)";
-    } else {
-        form.style.display = "none";
-        btn.innerHTML = '<i class="fas fa-plus-circle"></i> Adicionar Registro';
-        btn.style.background = "linear-gradient(135deg, #28a745 0%, #20c997 100%)";
-    }
-}
 
-function addFinanceExpense() {
-    const container = document.getElementById("financeExpenseContainer");
-    const div = document.createElement("div");
-    div.classList.add("expense-item");
-    div.innerHTML = `
-        <input type="text" placeholder="Ex: Peça">
-        <input type="number" placeholder="R$" oninput="calcularLucro()">
-        <button onclick="this.parentElement.remove(); calcularLucro()">✕</button>
-    `;
-    container.appendChild(div);
-}
-
-function calcularLucro() {
-    const valorServico = Number(document.getElementById("valorServico").value) || 0;
-    const gastos = document.querySelectorAll("#financeExpenseContainer input[type='number']");
-    let totalGastos = 0;
-    gastos.forEach(input => { totalGastos += Number(input.value) || 0; });
-    const lucro = valorServico - totalGastos;
-    document.getElementById("lucroFinal").innerText = "Lucro: R$ " + lucro.toFixed(2);
-}
 
 // Popular select de clientes
 function popularSelectClientes() {
@@ -1108,4 +1223,21 @@ function removerFoto() {
     const photoInput = document.getElementById('servicePhoto');
     if (preview) preview.style.display = 'none';
     if (photoInput) photoInput.value = '';
+}
+
+
+// ==================== NAVEGAÇÃO DOS CARDS ====================
+function irParaFinanceiro() {
+    changeScreen('financial');
+    // Opcional: recarregar o relatório do período atual
+    const activePeriod = document.querySelector('.period-btn-modern.active')?.dataset.period || 'monthly';
+    loadFinancialReport(activePeriod);
+}
+
+function irParaServicos() {
+    changeScreen('services');
+}
+
+function irParaClientes() {
+    changeScreen('clientes');
 }

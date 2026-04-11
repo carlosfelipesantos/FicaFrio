@@ -10,43 +10,45 @@
 </head>
 <body>
     <div class="main-container">
-        <!-- TELA INÍCIO -->
-        <div id="homeScreen" class="screen active">
-           <div class="welcome-card">
-    <div class="welcome-header">
-        <h1>Olá Fábio! 👋</h1>
-   
-    </div>
-    <div class="date-info" id="currentDate"></div>
-</div>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon"><img src="Images/moedas.png" alt="Lucro" style="width: 60px;"></div>
-                    <div class="stat-label">Lucro Mensal</div>
-                    <div class="stat-value positive" id="weekRevenue">R$ 0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><img src="Images/geladeira.png" alt="Serviços" style="width: 50px; height: 75px;"></div>
-                    <div class="stat-label">Serviços Mensais</div>
-                    <div class="stat-value" id="weekExpenses">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><img src="Images/pessoa.png" alt="Clientes" style="width: 70px;"></div>
-                    <div class="stat-label">Clientes</div>
-                    <div class="stat-value positive" id="weekProfit">0</div>
-                </div>
-            </div>
-            <button class="btn-new-service" onclick="abrirNovoServico()">
-                <i class="fas fa-plus"></i> Novo Serviço
-            </button>
-            <div class="recent-services">
-                <div class="section-header">
-                    <h3> Últimos Serviços</h3>
-                    <a href="#" onclick="verTodosServicos()" class="btn-link">Ver todos →</a>
-                </div>
-                <div id="recentServicesList"></div>
-            </div>
+       <!-- TELA INÍCIO -->
+<div id="homeScreen" class="screen active">
+    <div class="welcome-card">
+        <div class="welcome-header">
+            <h1>Olá Fábio! 👋</h1>
         </div>
+        <div class="date-info" id="currentDate"></div>
+    </div>
+    
+    <div class="stats-grid">
+        <div class="stat-card" onclick="irParaFinanceiro()" style="cursor: pointer;">
+            <div class="stat-icon"><img src="Images/moedas.png" alt="Lucro" style="width: 60px;"></div>
+            <div class="stat-label">Lucro Mensal</div>
+            <div class="stat-value positive" id="weekRevenue">R$ 0</div>
+        </div>
+        <div class="stat-card" onclick="irParaServicos()" style="cursor: pointer;">
+            <div class="stat-icon"><img src="Images/geladeira.png" alt="Serviços" style="width: 50px; height: 75px;"></div>
+            <div class="stat-label">Serviços Mensais</div>
+            <div class="stat-value" id="weekExpenses">0</div>
+        </div>
+        <div class="stat-card" onclick="irParaClientes()" style="cursor: pointer;">
+            <div class="stat-icon"><img src="Images/pessoa.png" alt="Clientes" style="width: 70px;"></div>
+            <div class="stat-label">Clientes</div>
+            <div class="stat-value positive" id="weekProfit">0</div>
+        </div>
+    </div>
+
+    <button class="btn-new-service" onclick="abrirNovoServico()">
+        <i class="fas fa-plus"></i> Novo Serviço
+    </button>
+    
+    <div class="recent-services">
+        <div class="section-header">
+            <h3>Últimos Serviços</h3>
+            <a href="#" onclick="verTodosServicos()" class="btn-link">Ver todos →</a>
+        </div>
+        <div id="recentServicesList"></div>
+    </div>
+</div>
 
         <!-- TELA SERVIÇOS -->
         <div id="servicesScreen" class="screen">
@@ -174,7 +176,7 @@
             </div>
         </div>
 
-      <!-- TELA FINANCEIRO - VERSÃO MAIS BONITA -->
+ <!-- TELA FINANCEIRO - VERSÃO SIMPLIFICADA -->
 <div id="financialScreen" class="screen">
     <div class="finance-wrapper">
         <div class="finance-header">
@@ -223,40 +225,14 @@
             </div>
         </div>
 
-        <!-- Botão para adicionar registro manual -->
-        <div class="add-record-wrapper">
-            <button class="btn-add-record" onclick="abrirFinanceiro()">
-                <i class="fas fa-plus-circle"></i> Adicionar Registro
-            </button>
-        </div>
-
-        <!-- Formulário de registro manual (escondido inicialmente) -->
-        <div id="financeForm" class="record-form" style="display: none;">
-            <h4 class="form-title">Novo Lançamento</h4>
-            <div class="form-group">
-                <label>Faturamento (R$)</label>
-                <input type="number" id="valorServico" class="modern-input" step="0.01" placeholder="0,00" oninput="calcularLucro()">
-            </div>
-            <div class="form-group">
-                <label> Gastos</label>
-                <div id="financeExpenseContainer" class="expense-list"></div>
-                <button type="button" class="btn-add-expense-modern" onclick="addFinanceExpense()">
-                    <i class="fas fa-plus"></i> Adicionar gasto
-                </button>
-            </div>
-            <div class="profit-preview">
-                <span> Lucro estimado:</span>
-                <strong id="lucroFinal">R$ 0,00</strong>
-            </div>
-            <div class="form-actions">
-                <button class="btn-cancel" onclick="fecharFinanceiro()">Cancelar</button>
-                <button class="btn-save" onclick="salvarFinanceiro()">Salvar Registro</button>
-            </div>
-        </div>
-
-        <!-- Detalhes extras (opcional) -->
+        <!-- Detalhes extras -->
         <div id="financialDetails" class="financial-details-modern">
             <!-- Os detalhes serão preenchidos via JS -->
+        </div>
+
+        <!-- Lista de serviços do período -->
+        <div id="listaFaturamentoContainer" class="lista-faturamento-container">
+            <!-- Os serviços serão carregados via JS -->
         </div>
     </div>
 </div>
@@ -291,7 +267,7 @@
 </div>
 
     <!-- Modais -->
-    <div class="modal fade" id="serviceModal" tabindex="-1">
+   <div class="modal fade" id="serviceModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="true">
         <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
@@ -303,7 +279,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="clienteModal" tabindex="-1">
+    <div class="modal fade" id="clienteModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -332,7 +308,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="clienteDetalhesModal" tabindex="-1">
+    <div class="modal fade" id="clienteDetalhesModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">

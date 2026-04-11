@@ -74,6 +74,7 @@ namespace RefrigeratorRepairSystem.Repositories
         public async Task<IEnumerable<Service>> GetByDateRangeAsync(DateTime start, DateTime end)
         {
             return await _context.Services
+                .Include(s => s.Gastos)  // 🔥 ADICIONE ESTA LINHA
                 .Where(s => s.DataServico.Date >= start.Date && s.DataServico.Date <= end.Date)
                 .OrderByDescending(s => s.DataServico)
                 .ToListAsync();
