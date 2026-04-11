@@ -3,7 +3,23 @@ const API_URL = 'http://localhost:5244/api';
 let services = [];
 let clientes = [];
 let currentScreen = 'home';
+let servicePhotoBase64 = null;
+let clientPhotoBase64 = null;
 
+// ==================== REGISTROS MANUAIS ====================
+let registrosManuais = [];
+
+function carregarRegistrosManuais() {
+    const saved = localStorage.getItem('registrosFinanceiros');
+    if (saved) {
+        registrosManuais = JSON.parse(saved);
+    }
+}
+
+function salvarRegistroManual(registro) {
+    registrosManuais.push(registro);
+    localStorage.setItem('registrosFinanceiros', JSON.stringify(registrosManuais));
+}
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', () => {
     setupNavigation();
@@ -65,6 +81,21 @@ function updateDateTime() {
 }
 
 // ==================== EVENT LISTENERS ====================
+// ==================== FUNÇÃO DEBOUNCE (FORA DO SETUPEVENTLISTENERS) ====================
+// ==================== FUNÇÃO DEBOUNCE ====================
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// ==================== EVENT LISTENERS ====================
 function setupEventListeners() {
     const form = document.getElementById('serviceForm');
     if (form) form.addEventListener('submit', saveService);
@@ -81,24 +112,16 @@ function setupEventListeners() {
     const clienteForm = document.getElementById('clienteForm');
     if (clienteForm) clienteForm.addEventListener('submit', salvarCliente);
     
-    document.querySelectorAll('.period-btn-modern').forEach(btn => {
-        btn.addEventListener('click', () => loadFinancialReport(btn.dataset.period));
-    });
-    
     const phoneField = document.getElementById('phone');
     if (phoneField) phoneField.addEventListener('blur', buscarClientePorTelefone);
     
-    // 🔥 Listener para esconder/mostrar campos ao selecionar cliente existente
     const selectCliente = document.getElementById('selectCliente');
     if (selectCliente) {
         selectCliente.addEventListener('change', function() {
             const clienteFields = document.getElementById('clienteFields');
             if (!clienteFields) return;
-
             if (this.value) {
-                // Cliente selecionado → esconde os campos
                 clienteFields.style.display = 'none';
-                // Preenche automaticamente os campos (opcional)
                 const cliente = clientes.find(c => c.id == this.value);
                 if (cliente) {
                     document.getElementById('clientName').value = cliente.nome;
@@ -106,7 +129,6 @@ function setupEventListeners() {
                     document.getElementById('address').value = cliente.endereco;
                 }
             } else {
-                // Nenhum cliente → mostra os campos e limpa
                 clienteFields.style.display = 'block';
                 document.getElementById('clientName').value = '';
                 document.getElementById('phone').value = '';
@@ -114,6 +136,17 @@ function setupEventListeners() {
             }
         });
     }
+
+    // 🔥 Botões de período com debounce (apenas uma vez)
+    // 🔥 Botões de período - sem debounce (mais rápido)
+const periodBtns = document.querySelectorAll('.period-btn-modern');
+periodBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        loadFinancialReport(btn.dataset.period);
+    });
+});
+    
+  
 }
 
 // ==================== BUSCAR CLIENTE POR TELEFONE ====================
@@ -137,9 +170,11 @@ async function buscarClientePorTelefone() {
 
 // ==================== SERVIÇOS ====================
 async function loadServices() {
+   
     try {
         const response = await fetch(`${API_URL}/Services`);
         services = await response.json();
+          console.log('Serviços carregados com gastos:', services.map(s => ({ id: s.id, gastos: s.gastos })));
         displayAllServices(services);
         updateRecentServices();
         updateStats();
@@ -149,6 +184,7 @@ async function loadServices() {
         updateRecentServices();
         updateStats();
     }
+   
 }
 
 function updateStats() {
@@ -172,13 +208,8 @@ function updateStats() {
         .filter(s => s.status === 'Completo')
         .reduce((sum, s) => sum + s.valor, 0);
     
-    // 🔥 Buscar gastos do mês (todos os gastos de serviços do mês)
+    // 🔥 Calcular gastos do mês usando os gastos carregados nos serviços
     let monthExpenses = 0;
-    // Precisamos somar os gastos de cada serviço do mês
-    // Como os gastos não estão no array services, vamos buscar via API para cada serviço
-    // OU podemos recalcular usando os dados que já temos se os gastos estiverem carregados
-    
-    // Solução: recalcular usando os gastos que já podem estar no objeto service
     for (const service of monthServices) {
         if (service.gastos && service.gastos.length > 0) {
             monthExpenses += service.gastos.reduce((sum, g) => sum + g.valor, 0);
@@ -190,29 +221,13 @@ function updateStats() {
     
     // Atualizar os cards da tela inicial
     const weekRevenueEl = document.getElementById('weekRevenue');
-    if (weekRevenueEl) weekRevenueEl.innerHTML = formatCurrency(monthProfit); // 🔥 Agora mostra LUCRO, não faturamento
+    if (weekRevenueEl) weekRevenueEl.innerHTML = formatCurrency(monthProfit);
     
     const weekExpensesEl = document.getElementById('weekExpenses');
-    if (weekExpensesEl) weekExpensesEl.innerHTML = monthServices.length; // Total de serviços no mês
+    if (weekExpensesEl) weekExpensesEl.innerHTML = monthServices.length;
     
     const weekProfitEl = document.getElementById('weekProfit');
-    if (weekProfitEl) weekProfitEl.innerHTML = totalClientesUnicos; // Total de clientes
-    
-    // Serviços concluídos na semana (para o card que você tem na home)
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay() + 1);
-    startOfWeek.setHours(0, 0, 0, 0);
-    const endOfWeek = new Date(today);
-    endOfWeek.setDate(today.getDate() - today.getDay() + 7);
-    endOfWeek.setHours(23, 59, 59, 999);
-    
-    const weekServices = services.filter(s => {
-        const serviceDate = new Date(s.dataServico);
-        return serviceDate >= startOfWeek && serviceDate <= endOfWeek && s.status === 'Completo';
-    });
-    
-    const completedCountEl = document.getElementById('completedCount');
-    if (completedCountEl) completedCountEl.innerHTML = weekServices.length;
+    if (weekProfitEl) weekProfitEl.innerHTML = totalClientesUnicos;
 }
 
 async function loadHomeData() {
@@ -229,22 +244,32 @@ function updateRecentServices() {
         </div>`;
         return;
     }
+    
     const recent = [...services].sort((a, b) => new Date(b.dataServico) - new Date(a.dataServico)).slice(0, 5);
-    container.innerHTML = recent.map(service => `
-        <div class="service-item" onclick="showServiceDetails(${service.id})">
-            <div class="service-info">
-                <h4>${service.nomeCliente}</h4>
-                <p>${service.descricaoServico.substring(0, 40)}${service.descricaoServico.length > 40 ? '...' : ''}</p>
-                <small>📅 ${new Date(service.dataServico).toLocaleDateString()}</small>
+    container.innerHTML = recent.map(service => {
+        // Calcular gastos e lucro
+        const totalGastos = service.gastos && service.gastos.length > 0 
+            ? service.gastos.reduce((sum, g) => sum + g.valor, 0) 
+            : 0;
+        const lucro = service.valor - totalGastos;
+        
+        return `
+            <div class="service-item" onclick="showServiceDetails(${service.id})">
+                <div class="service-info">
+                    <h4>${service.nomeCliente} ${service.fotoServico ? '📷' : ''}</h4>
+                    <p>${service.descricaoServico.substring(0, 40)}${service.descricaoServico.length > 40 ? '...' : ''}</p>
+                    <small>📅 ${new Date(service.dataServico).toLocaleDateString()}</small>
+                </div>
+                <div class="service-value">
+                    <div class="amount">💰 ${formatCurrency(service.valor)}</div>
+                    <div style="font-size: 11px; color: #dc3545;">💸 Gastos: ${formatCurrency(totalGastos)}</div>
+                    <div style="font-size: 11px; color: #28a745;">📈 Lucro: ${formatCurrency(lucro)}</div>
+                    <div class="status" style="background:${getStatusColor(service.status)};color:white;padding:4px 8px;border-radius:10px;margin-top:5px;">${getStatusText(service.status)}</div>
+                </div>
             </div>
-            <div class="service-value">
-                <div class="amount">${formatCurrency(service.valor)}</div>
-                <div class="status" style="background:${getStatusColor(service.status)};color:white;padding:4px 8px;border-radius:10px;">${getStatusText(service.status)}</div>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
-
 function displayAllServices(servicesArray) {
     const container = document.getElementById('allServicesList');
     if (!servicesArray.length) {
@@ -255,16 +280,17 @@ function displayAllServices(servicesArray) {
         </div>`;
         return;
     }
+    
     container.innerHTML = servicesArray.map(service => `
         <div class="service-item" onclick="showServiceDetails(${service.id})">
             <div class="service-info">
-                <h4>${service.nomeCliente}</h4>
+                <h4>${service.nomeCliente} ${service.fotoServico ? '📷' : ''}</h4>
                 <p>📞 ${service.telefoneCliente}</p>
                 <p>📅 ${new Date(service.dataServico).toLocaleDateString()}</p>
             </div>
             <div class="service-value">
                 <div class="amount">${formatCurrency(service.valor)}</div>
-                <div class="status" style="background:${getStatusColor(service.status)};color:white;padding:4px 8px;border-radius:10px;">${getStatusText(service.status)}</div>
+                <div class="status" style="background:${getStatusColor(service.status)};color:white;padding:4px 8px;border-radius:10px;margin-top:5px;">${getStatusText(service.status)}</div>
             </div>
         </div>
     `).join('');
@@ -323,6 +349,9 @@ async function saveService(event) {
 
     let clienteId = null;
 
+    console.log('Enviando foto?', servicePhotoBase64 ? 'SIM' : 'NÃO');
+console.log('Tamanho da foto:', servicePhotoBase64?.length || 0);
+
     // 1. Verificar se foi selecionado um cliente existente
     const selectCliente = document.getElementById('selectCliente');
     if (selectCliente && selectCliente.value) {
@@ -360,7 +389,8 @@ async function saveService(event) {
         Status: status,
         TemGarantia: temGarantia,
         FimGarantia: fimGarantia,
-        ClienteId: clienteId
+        ClienteId: clienteId,
+        FotoServico: servicePhotoBase64 
         // 🔥 NÃO envia Cliente: { ... }
     };
 
@@ -451,6 +481,11 @@ async function showServiceDetails(id) {
             <strong>Data:</strong> ${new Date(service.dataServico).toLocaleDateString()}<br>
             <strong>Status:</strong> ${getStatusText(service.status)}</p>
             
+            ${service.fotoServico ? `
+            <h6>📸 Foto do Serviço</h6>
+            <img src="${service.fotoServico}" style="width: 100%; border-radius: 10px; margin-bottom: 10px;">
+            ` : ''}
+
             <h6>💰 Gastos do Serviço</h6>
             ${gastosLista.length ? gastosLista.map(g => `
                 <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee;">
@@ -481,7 +516,29 @@ async function showServiceDetails(id) {
                 <button class="btn btn-danger" onclick="deletarServico(${service.id})">🗑️ Excluir Serviço</button>
             </div>
         `;
-        new bootstrap.Modal(document.getElementById('serviceModal')).show();
+        
+        // 🔥 Cria o modal e garante que o backdrop seja removido ao fechar
+        const modalElement = document.getElementById('serviceModal');
+        const modal = new bootstrap.Modal(modalElement);
+        
+        // Remove qualquer backdrop existente antes de abrir
+        const existingBackdrop = document.querySelector('.modal-backdrop');
+        if (existingBackdrop) {
+            existingBackdrop.remove();
+        }
+        document.body.classList.remove('modal-open');
+        
+        modal.show();
+        
+        // 🔥 Garante que o backdrop seja removido quando o modal for fechado
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            document.body.classList.remove('modal-open');
+        });
+        
     } catch (error) {
         console.error('Erro ao carregar detalhes:', error);
     }
@@ -693,55 +750,141 @@ function filtrarClientes() {
 }
 
 // ==================== FINANCEIRO ====================
+const financialCache = {};
+
 async function loadFinancialReport(period) {
+    // Carregar registros manuais do localStorage
+    carregarRegistrosManuais();
+    
+    const now = Date.now();
+    if (financialCache[period] && (now - financialCache[period].timestamp) < 5000) {
+        const data = financialCache[period].data;
+        // 🔥 Adicionar registros manuais aos dados
+        const dadosComManuais = adicionarRegistrosManuais(data, period);
+        updateFinancialUI(dadosComManuais, period);
+        return;
+    }
+    
+    if (loadFinancialReport.loading) return;
+    loadFinancialReport.loading = true;
+    
     try {
+        const revenueEl = document.getElementById('financeRevenue');
+        const expensesEl = document.getElementById('financeExpenses');
+        const profitEl = document.getElementById('financeProfit');
+        
+        if (revenueEl) revenueEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (expensesEl) expensesEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (profitEl) profitEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
         const response = await fetch(`${API_URL}/Services/financial/${period}`);
         const data = await response.json();
         
-        // Atualizar os cards principais (IDs existentes no HTML)
-        const revenueEl = document.getElementById('financeRevenue');
-        const expensesEl = document.getElementById('financeExpenses');
-        const profitEl = document.getElementById('financeProfit');
+        // 🔥 Adicionar registros manuais
+        const dadosComManuais = adicionarRegistrosManuais(data, period);
         
-        if (revenueEl) revenueEl.innerHTML = formatCurrency(data.revenue);
-        if (expensesEl) expensesEl.innerHTML = formatCurrency(data.expenses);
-        if (profitEl) profitEl.innerHTML = formatCurrency(data.profit);
+        financialCache[period] = {
+            data: dadosComManuais,
+            timestamp: Date.now()
+        };
         
-        // Atualizar detalhes adicionais (se existir o elemento)
-        const detailsContainer = document.getElementById('financialDetails');
-        if (detailsContainer) {
-            detailsContainer.innerHTML = `
-                <div class="detail-item"><span>📊 Total de Serviços</span><span>${data.totalServices || 0}</span></div>
-                <div class="detail-item"><span>✅ Serviços Concluídos</span><span class="completed">${data.completedServices || 0}</span></div>
-                <div class="detail-item"><span>⏳ Serviços Pendentes</span><span class="pending">${(data.totalServices || 0) - (data.completedServices || 0)}</span></div>
-                <div class="detail-item"><span>📅 Período</span><span>${getPeriodText(period)}</span></div>
-            `;
-            if (period === 'daily') {
-                detailsContainer.innerHTML += `<div class="detail-item"><span>📆 Data</span><span>${new Date().toLocaleDateString()}</span></div>`;
-            }
-        }
-        
-        // Marcar botão ativo (os botões têm classe 'period-btn-modern' no seu HTML)
-        document.querySelectorAll('.period-btn-modern').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.period === period) {
-                btn.classList.add('active');
-            }
-        });
+        updateFinancialUI(dadosComManuais, period);
     } catch (error) {
         console.error('Erro ao carregar relatório:', error);
-        const revenueEl = document.getElementById('financeRevenue');
-        const expensesEl = document.getElementById('financeExpenses');
-        const profitEl = document.getElementById('financeProfit');
-        if (revenueEl) revenueEl.innerHTML = formatCurrency(0);
-        if (expensesEl) expensesEl.innerHTML = formatCurrency(0);
-        if (profitEl) profitEl.innerHTML = formatCurrency(0);
-        
-        const detailsContainer = document.getElementById('financialDetails');
-        if (detailsContainer) {
-            detailsContainer.innerHTML = '<div class="alert alert-danger">Erro ao carregar dados financeiros</div>';
+        // ... resto do erro
+    } finally {
+        loadFinancialReport.loading = false;
+    }
+}
+
+function adicionarRegistrosManuais(data, period) {
+    let totalManualRevenue = 0;
+    let totalManualExpenses = 0;
+    
+    const hoje = new Date();
+    const inicioDoPeriodo = getInicioPeriodo(period, hoje);
+    const fimDoPeriodo = getFimPeriodo(period, hoje);
+    
+    registrosManuais.forEach(reg => {
+        const dataRegistro = new Date(reg.data);
+        if (dataRegistro >= inicioDoPeriodo && dataRegistro <= fimDoPeriodo) {
+            totalManualRevenue += reg.valor || 0;
+            totalManualExpenses += reg.gastos || 0;
+        }
+    });
+    
+    return {
+        ...data,
+        revenue: (data.revenue || 0) + totalManualRevenue,
+        expenses: (data.expenses || 0) + totalManualExpenses,
+        profit: (data.profit || 0) + (totalManualRevenue - totalManualExpenses)
+    };
+}
+
+function getInicioPeriodo(period, date) {
+    switch(period) {
+        case 'daily':
+            return new Date(date.setHours(0,0,0,0));
+        case 'weekly':
+            const start = new Date(date);
+            start.setDate(date.getDate() - date.getDay() + 1);
+            start.setHours(0,0,0,0);
+            return start;
+        case 'monthly':
+            return new Date(date.getFullYear(), date.getMonth(), 1);
+        case 'yearly':
+            return new Date(date.getFullYear(), 0, 1);
+        default:
+            return new Date(date.setHours(0,0,0,0));
+    }
+}
+
+function getFimPeriodo(period, date) {
+    switch(period) {
+        case 'daily':
+            return new Date(date.setHours(23,59,59,999));
+        case 'weekly':
+            const end = new Date(date);
+            end.setDate(date.getDate() - date.getDay() + 7);
+            end.setHours(23,59,59,999);
+            return end;
+        case 'monthly':
+            return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+        case 'yearly':
+            return new Date(date.getFullYear(), 11, 31);
+        default:
+            return new Date(date.setHours(23,59,59,999));
+    }
+}
+
+function updateFinancialUI(data, period) {
+    const revenueEl = document.getElementById('financeRevenue');
+    const expensesEl = document.getElementById('financeExpenses');
+    const profitEl = document.getElementById('financeProfit');
+    
+    if (revenueEl) revenueEl.innerHTML = formatCurrency(data.revenue);
+    if (expensesEl) expensesEl.innerHTML = formatCurrency(data.expenses);
+    if (profitEl) profitEl.innerHTML = formatCurrency(data.profit);
+    
+    const detailsContainer = document.getElementById('financialDetails');
+    if (detailsContainer) {
+        detailsContainer.innerHTML = `
+            <div class="detail-item"><span>📊 Total de Serviços</span><span>${data.totalServices || 0}</span></div>
+            <div class="detail-item"><span>✅ Serviços Concluídos</span><span class="completed">${data.completedServices || 0}</span></div>
+            <div class="detail-item"><span>⏳ Serviços Pendentes</span><span class="pending">${(data.totalServices || 0) - (data.completedServices || 0)}</span></div>
+            <div class="detail-item"><span>📅 Período</span><span>${getPeriodText(period)}</span></div>
+        `;
+        if (period === 'daily') {
+            detailsContainer.innerHTML += `<div class="detail-item"><span>📆 Data</span><span>${new Date().toLocaleDateString()}</span></div>`;
         }
     }
+    
+    document.querySelectorAll('.period-btn-modern').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.period === period) {
+            btn.classList.add('active');
+        }
+    });
 }
 
 // Função para salvar registro manual (financeiro)
@@ -752,7 +895,6 @@ async function salvarFinanceiro() {
         return;
     }
     
-    // Coletar gastos
     const gastos = [];
     const expenseItems = document.querySelectorAll('#financeExpenseContainer .expense-item');
     expenseItems.forEach(item => {
@@ -764,18 +906,30 @@ async function salvarFinanceiro() {
     });
     
     const totalGastos = gastos.reduce((sum, g) => sum + g.valor, 0);
-    const lucro = valorServico - totalGastos;
     
-    console.log(`✅ Registro salvo! Faturamento: ${formatCurrency(valorServico)}, Gastos: ${formatCurrency(totalGastos)}, Lucro: ${formatCurrency(lucro)}`);
-    if (gastos.length > 0) {
-        console.log('Detalhes dos gastos:', gastos);
-    }
+    // 🔥 Salvar registro manual
+    const novoRegistro = {
+        id: Date.now(),
+        valor: valorServico,
+        gastos: totalGastos,
+        data: new Date().toISOString(),
+        descricao: 'Registro manual'
+    };
+    
+    salvarRegistroManual(novoRegistro);
+    
+    console.log(`✅ Registro salvo! Faturamento: ${formatCurrency(valorServico)}, Gastos: ${formatCurrency(totalGastos)}`);
     
     // Limpar formulário
     document.getElementById('valorServico').value = '';
     document.getElementById('financeExpenseContainer').innerHTML = '';
     document.getElementById('lucroFinal').innerText = 'Lucro: R$ 0';
     fecharFinanceiro();
+    
+    // 🔥 Limpar cache e recarregar
+    const activePeriod = document.querySelector('.period-btn-modern.active')?.dataset.period || 'monthly';
+    financialCache[activePeriod] = null;
+    await loadFinancialReport(activePeriod);
 }
 
 function fecharFinanceiro() {
@@ -936,12 +1090,16 @@ function previewPhoto(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
+            servicePhotoBase64 = e.target.result;
+            console.log('Foto capturada, tamanho:', servicePhotoBase64.length);
             const preview = document.getElementById('photoPreview');
             const img = document.getElementById('photoPreviewImg');
-            if (img) img.src = e.target.result;
+            if (img) img.src = servicePhotoBase64;
             if (preview) preview.style.display = 'block';
         };
         reader.readAsDataURL(input.files[0]);
+    } else {
+        console.log('Nenhum arquivo selecionado');
     }
 }
 

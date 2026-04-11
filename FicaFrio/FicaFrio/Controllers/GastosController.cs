@@ -15,11 +15,10 @@ namespace FicaFrio.Controllers
             _gastosRepository = gastosRepository;
         }
 
-
         [HttpGet("obter/{id}")]
         public async Task<ActionResult<Gasto>> GetGastoPorId(int id)
         {
-            var gasto = await _gastosRepository.GetByIdAsync(id); // precisa criar este método no repositório
+            var gasto = await _gastosRepository.GetByIdAsync(id);
             if (gasto == null) return NotFound();
             return Ok(gasto);
         }
@@ -27,20 +26,25 @@ namespace FicaFrio.Controllers
         [HttpPost]
         public async Task<ActionResult<Gasto>> CreateExpense(Gasto gasto)
         {
+            // 🔥 Remove validação do Service
+            ModelState.Remove("Service");
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var created = await _gastosRepository.CreateAsync(gasto);
-            return CreatedAtAction(nameof(GetExpense), new { id = created.Id }, created);
+            return CreatedAtAction(nameof(GetGastoPorId), new { id = created.Id }, created);
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Gasto>> GetExpense(int id)
         {
             var expenses = await _gastosRepository.GetByServiceIdAsync(id);
-        
             return Ok(expenses);
         }
 
         [HttpGet("service/{serviceId}")]
-        public async Task<ActionResult<Gasto>> GetServiceExpenses(int serviceId)
+        public async Task<ActionResult<IEnumerable<Gasto>>> GetServiceExpenses(int serviceId)
         {
             var expenses = await _gastosRepository.GetByServiceIdAsync(serviceId);
             return Ok(expenses);
@@ -52,10 +56,7 @@ namespace FicaFrio.Controllers
             var result = await _gastosRepository.DeleteAsync(id);
             if (!result)
                 return NotFound();
-
             return NoContent();
         }
     }
 }
-    
-

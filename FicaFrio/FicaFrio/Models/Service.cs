@@ -18,6 +18,8 @@ namespace RefrigeratorRepairSystem.Models
         [MaxLength(20)]
         public string TelefoneCliente { get; set; } = string.Empty;
 
+        public string? FotoServico { get; set; }  // Base64 da foto
+
         [Required]
         [MaxLength(200)]
         public string Endereco { get; set; } = string.Empty;

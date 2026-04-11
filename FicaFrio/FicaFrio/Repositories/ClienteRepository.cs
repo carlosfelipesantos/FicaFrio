@@ -21,6 +21,7 @@ namespace RefrigeratorRepairSystem.Repositories
         public async Task<IEnumerable<Cliente>> GetAllAsync()
         {
             return await _context.Clientes
+                 .Include(c => c.Servicos)
                 .OrderBy(c => c.Nome)
                 .ToListAsync();
         }

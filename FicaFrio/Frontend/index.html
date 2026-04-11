@@ -67,6 +67,8 @@
                 </button>
                 <div id="clientesList" class="clientes-list"></div>
             </div>
+
+            
         </div>
 
         <!-- TELA NOVO SERVIÇO -->
@@ -260,13 +262,33 @@
 </div>
 
     <!-- Navegação Inferior -->
-    <div class="bottom-nav">
-        <div class="nav-item active" data-screen="home"><i class="fas fa-home"></i><span>Início</span></div>
-        <div class="nav-item" data-screen="clientes"><i class="fas fa-users"></i><span>Clientes</span></div>
-        <div class="nav-item" data-screen="services"><i class="fas fa-list"></i><span>Serviços</span></div>
-        <div class="nav-item" data-screen="new"><i class="fas fa-plus-circle"></i><span>Novo</span></div>
-        <div class="nav-item" data-screen="financial"><i class="fas fa-chart-line"></i><span>Financeiro</span></div>
+<div class="bottom-nav">
+    <div class="nav-item" data-screen="home">
+        <i class="fas fa-home"></i>
+        <span>Início</span>
     </div>
+    <div class="nav-item" data-screen="clientes">
+        <i class="fas fa-users"></i>
+        <span>Clientes</span>
+    </div>
+    
+    <!-- Botão Novo destacado no centro -->
+    <div class="nav-item nav-item-new" data-screen="new">
+        <div class="new-button-wrapper">
+            <i class="fas fa-plus-circle"></i>
+        </div>
+        <span>Novo</span>
+    </div>
+    
+    <div class="nav-item" data-screen="services">
+        <i class="fas fa-list"></i>
+        <span>Serviços</span>
+    </div>
+    <div class="nav-item" data-screen="financial">
+        <i class="fas fa-chart-line"></i>
+        <span>Financeiro</span>
+    </div>
+</div>
 
     <!-- Modais -->
     <div class="modal fade" id="serviceModal" tabindex="-1">

@@ -1289,3 +1289,93 @@ button.btn-salvar-registro:hover {
         font-size: 12px;
     }
 }
+
+
+/* Garantir que o ícone e texto apareçam */
+.servicos-count {
+    display: inline-block;
+    background: #667eea;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.servicos-count i {
+    margin-right: 5px;
+    font-size: 12px;
+}
+
+
+
+/* Botão Novo destacado na navegação */
+.nav-item-new {
+    position: relative;
+    margin-top: -15px;
+}
+
+.new-button-wrapper {
+    background: linear-gradient(135deg, #ffffff 0%, #426eff 100%);
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 5px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    transition: all 0.2s;
+}
+
+.new-button-wrapper i {
+    font-size: 28px;
+    color: rgb(71, 106, 244);
+    margin: 0;
+}
+
+.nav-item-new:active .new-button-wrapper {
+    transform: scale(0.95);
+}
+
+.nav-item-new span {
+    display: block;
+    font-size: 11px;
+    color: #323232;
+    margin-top: 5px;
+}
+
+.nav-item-new.active span {
+    color: #667eea;
+}
+
+/* Ajuste dos outros itens da navegação */
+.bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    padding: 8px 16px 12px;
+}
+
+.nav-item {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #999;
+    padding: 5px 0;
+}
+
+.nav-item i {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.nav-item span {
+    font-size: 11px;
+}
+
+.nav-item.active {
+    color: #667eea;
+}
