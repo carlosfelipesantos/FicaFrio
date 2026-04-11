@@ -17,10 +17,11 @@ namespace RefrigeratorRepairSystem.Repositories
             _context = context;
         }
 
-     
+
         public async Task<IEnumerable<Service>> GetAllAsync()
         {
             return await _context.Services
+                .Include(s => s.Gastos)  // 🔥 Adicione esta linha
                 .OrderByDescending(s => s.DataServico)
                 .ToListAsync();
         }
@@ -28,20 +29,20 @@ namespace RefrigeratorRepairSystem.Repositories
         public async Task<Service> GetByIdAsync(int id)
         {
             return await _context.Services
-                .Include(s => s.Gastos)  // Inclui os gastos do serviço
+                .Include(s => s.Gastos)  // 🔥 Já deve ter esta linha
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
 
 
         public async Task<Service> CreateAsync(Service service)
         {
-            service.CriadoEm = DateTime.Now;  
+            service.CriadoEm = DateTime.Now;
             _context.Services.Add(service);
             await _context.SaveChangesAsync();
             return service;
         }
 
- 
+
         public async Task<Service> UpdateAsync(Service service)
         {
             _context.Entry(service).State = EntityState.Modified;

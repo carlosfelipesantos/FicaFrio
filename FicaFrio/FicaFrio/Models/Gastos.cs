@@ -15,11 +15,11 @@ namespace RefrigeratorRepairSystem.Models
 
         [Required]
         [MaxLength(50)]
-        public string TipoDeGasto { get; set; } // Gasolina, Peças, outros
+        public string TipoDeGasto { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(200)]
-        public string Descricacao { get; set; }
+        public string Descricacao { get; set; } = string.Empty;
 
         [Required]
         [Column(TypeName = "decimal(10,2)")]
@@ -29,6 +29,7 @@ namespace RefrigeratorRepairSystem.Models
         public DateTime DataGasto { get; set; }
 
         [ForeignKey("ServiceId")]
-        public virtual Service Service { get; set; }
+        // 🔥 Remova o [Required] desta linha e torne a propriedade anulável
+        public virtual Service? Service { get; set; }
     }
 }

@@ -45,6 +45,8 @@
             [HttpPost]
             public async Task<ActionResult<Service>> Create(Service service)
             {
+                ModelState.Remove("Cliente");
+
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 

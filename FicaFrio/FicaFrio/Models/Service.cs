@@ -12,18 +12,18 @@ namespace RefrigeratorRepairSystem.Models
 
         [Required(ErrorMessage = "Nome do cliente é obrigatório")]
         [MaxLength(100)]
-        public string NomeCliente { get; set; }
+        public string NomeCliente { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(20)]
-        public string TelefoneCliente { get; set; }
+        public string TelefoneCliente { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(200)]
-        public string Endereco { get; set; }
+        public string Endereco { get; set; } = string.Empty;
 
         [Required]
-        public string DescricaoServico { get; set; }
+        public string DescricaoServico { get; set; } = string.Empty;
 
         [Required]
         [Column(TypeName = "decimal(10,2)")]
@@ -32,15 +32,15 @@ namespace RefrigeratorRepairSystem.Models
         [Required]
         public DateTime DataServico { get; set; }
 
-        // Adicione estas propriedades à classe Service existente
-        public int ClienteId { get; set; }  // Chave estrangeira
+        // 🔥 Torna ClienteId anulável (opcional)
+        public int? ClienteId { get; set; }
 
         [ForeignKey("ClienteId")]
-        public virtual Cliente Cliente { get; set; }
+        public virtual Cliente? Cliente { get; set; }
 
         [Required]
         [MaxLength(20)]
-        public string Status { get; set; } // Pendente, EmProgresso, Completo
+        public string Status { get; set; } = "Pendente";
 
         public bool TemGarantia { get; set; }
 

@@ -81,7 +81,7 @@ function setupEventListeners() {
     const clienteForm = document.getElementById('clienteForm');
     if (clienteForm) clienteForm.addEventListener('submit', salvarCliente);
     
-    document.querySelectorAll('.period-btn').forEach(btn => {
+    document.querySelectorAll('.period-btn-modern').forEach(btn => {
         btn.addEventListener('click', () => loadFinancialReport(btn.dataset.period));
     });
     
@@ -156,6 +156,49 @@ function updateStats() {
     const totalClientesUnicos = new Set(services.map(s => s.telefoneCliente)).size;
     
     const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    endOfMonth.setHours(23, 59, 59, 999);
+    
+    // Filtrar serviços do mês atual
+    const monthServices = services.filter(s => {
+        const serviceDate = new Date(s.dataServico);
+        return serviceDate >= startOfMonth && serviceDate <= endOfMonth;
+    });
+    
+    // Calcular faturamento do mês (apenas serviços concluídos)
+    const monthRevenue = monthServices
+        .filter(s => s.status === 'Completo')
+        .reduce((sum, s) => sum + s.valor, 0);
+    
+    // 🔥 Buscar gastos do mês (todos os gastos de serviços do mês)
+    let monthExpenses = 0;
+    // Precisamos somar os gastos de cada serviço do mês
+    // Como os gastos não estão no array services, vamos buscar via API para cada serviço
+    // OU podemos recalcular usando os dados que já temos se os gastos estiverem carregados
+    
+    // Solução: recalcular usando os gastos que já podem estar no objeto service
+    for (const service of monthServices) {
+        if (service.gastos && service.gastos.length > 0) {
+            monthExpenses += service.gastos.reduce((sum, g) => sum + g.valor, 0);
+        }
+    }
+    
+    // Calcular lucro real (faturamento - gastos)
+    const monthProfit = monthRevenue - monthExpenses;
+    
+    // Atualizar os cards da tela inicial
+    const weekRevenueEl = document.getElementById('weekRevenue');
+    if (weekRevenueEl) weekRevenueEl.innerHTML = formatCurrency(monthProfit); // 🔥 Agora mostra LUCRO, não faturamento
+    
+    const weekExpensesEl = document.getElementById('weekExpenses');
+    if (weekExpensesEl) weekExpensesEl.innerHTML = monthServices.length; // Total de serviços no mês
+    
+    const weekProfitEl = document.getElementById('weekProfit');
+    if (weekProfitEl) weekProfitEl.innerHTML = totalClientesUnicos; // Total de clientes
+    
+    // Serviços concluídos na semana (para o card que você tem na home)
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay() + 1);
     startOfWeek.setHours(0, 0, 0, 0);
@@ -167,17 +210,6 @@ function updateStats() {
         const serviceDate = new Date(s.dataServico);
         return serviceDate >= startOfWeek && serviceDate <= endOfWeek && s.status === 'Completo';
     });
-    const weekRevenue = weekServices.reduce((sum, s) => sum + s.valor, 0);
-    
-    // Verificar se os elementos existem antes de atualizar
-    const weekRevenueEl = document.getElementById('weekRevenue');
-    if (weekRevenueEl) weekRevenueEl.innerHTML = formatCurrency(weekRevenue);
-    
-    const weekExpensesEl = document.getElementById('weekExpenses');
-    if (weekExpensesEl) weekExpensesEl.innerHTML = totalClientesUnicos;
-    
-    const weekProfitEl = document.getElementById('weekProfit');
-    if (weekProfitEl) weekProfitEl.innerHTML = totalServicos;
     
     const completedCountEl = document.getElementById('completedCount');
     if (completedCountEl) completedCountEl.innerHTML = weekServices.length;
@@ -278,10 +310,16 @@ async function saveService(event) {
         }
     });
 
-    // Dados do serviço
+    // Dados do serviço (vindos do formulário)
     const nomeCliente = document.getElementById('clientName').value;
     const telefoneCliente = document.getElementById('phone').value;
     const endereco = document.getElementById('address').value;
+    const descricao = document.getElementById('problemDesc').value;
+    const valor = parseFloat(document.getElementById('amount').value);
+    const dataServico = document.getElementById('serviceDate').value;
+    const status = document.getElementById('status').value;
+    const temGarantia = document.getElementById('hasWarranty').checked;
+    const fimGarantia = temGarantia ? document.getElementById('warrantyEnd').value : null;
 
     let clienteId = null;
 
@@ -290,11 +328,11 @@ async function saveService(event) {
     if (selectCliente && selectCliente.value) {
         clienteId = parseInt(selectCliente.value);
     } else {
-        // 2. Criar novo cliente com os dados preenchidos
+        // 2. Criar novo cliente (sem enviar Id)
         const novoCliente = {
-            nome: nomeCliente,
-            telefone: telefoneCliente,
-            endereco: endereco
+            Nome: nomeCliente,
+            Telefone: telefoneCliente,
+            Endereco: endereco
         };
         try {
             const resCliente = await fetch(`${API_URL}/Clientes`, {
@@ -307,22 +345,23 @@ async function saveService(event) {
             clienteId = clienteCriado.id;
         } catch (error) {
             console.error('Erro ao criar cliente:', error);
-            return; // Interrompe o salvamento
+            return;
         }
     }
 
-    // 3. Montar objeto do serviço em PascalCase
+    // 3. Montar objeto do serviço (NÃO envia objeto Cliente aninhado)
     const service = {
         NomeCliente: nomeCliente,
         TelefoneCliente: telefoneCliente,
         Endereco: endereco,
-        DescricaoServico: document.getElementById('problemDesc').value,
-        Valor: parseFloat(document.getElementById('amount').value),
-        DataServico: document.getElementById('serviceDate').value,
-        Status: document.getElementById('status').value,
-        TemGarantia: document.getElementById('hasWarranty').checked,
-        FimGarantia: document.getElementById('hasWarranty').checked ? document.getElementById('warrantyEnd').value : null,
+        DescricaoServico: descricao,
+        Valor: valor,
+        DataServico: dataServico,
+        Status: status,
+        TemGarantia: temGarantia,
+        FimGarantia: fimGarantia,
         ClienteId: clienteId
+        // 🔥 NÃO envia Cliente: { ... }
     };
 
     const btnSubmit = event.target.querySelector('button[type="submit"]');
@@ -345,20 +384,33 @@ async function saveService(event) {
         const savedService = await response.json();
 
         // Salvar gastos
-        for (const gasto of gastos) {
-            const gastoData = {
-                ServiceId: savedService.id,
-                Descricacao: gasto.descricao,
-                Valor: gasto.valor,
-                DataGasto: new Date().toISOString()
-            };
-            await fetch(`${API_URL}/Gastos`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(gastoData)
-            });
+        // Salvar gastos (depois de salvar o serviço)
+// Salvar gastos
+if (gastos.length > 0) {
+    for (const gasto of gastos) {
+        const gastoData = {
+            ServiceId: savedService.id,
+            TipoDeGasto: gasto.descricao,
+            Descricacao: gasto.descricao,
+            Valor: gasto.valor,
+            DataGasto: new Date().toISOString()
+        };
+        console.log('Enviando gasto:', gastoData);
+        
+        const gastoResponse = await fetch(`${API_URL}/Gastos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(gastoData)
+        });
+        
+        if (!gastoResponse.ok) {
+            const errorText = await gastoResponse.text();
+            console.error('Erro ao salvar gasto:', errorText);
+        } else {
+            console.log('✅ Gasto salvo com sucesso!');
         }
-
+    }
+}
         console.log('✅ Serviço e gastos salvos com sucesso!');
         document.getElementById('serviceForm').reset();
         limparFormularioServico();
@@ -646,30 +698,49 @@ async function loadFinancialReport(period) {
         const response = await fetch(`${API_URL}/Services/financial/${period}`);
         const data = await response.json();
         
-        document.getElementById('financeRevenue').innerHTML = formatCurrency(data.revenue);
-        document.getElementById('financeExpenses').innerHTML = formatCurrency(data.expenses);
-        document.getElementById('financeProfit').innerHTML = formatCurrency(data.profit);
+        // Atualizar os cards principais (IDs existentes no HTML)
+        const revenueEl = document.getElementById('financeRevenue');
+        const expensesEl = document.getElementById('financeExpenses');
+        const profitEl = document.getElementById('financeProfit');
         
-        const details = document.getElementById('financialDetails');
-        details.innerHTML = `
-            <div class="detail-item"><span>📊 Total de Serviços</span><span>${data.totalServices || 0}</span></div>
-            <div class="detail-item"><span>✅ Serviços Concluídos</span><span class="completed">${data.completedServices || 0}</span></div>
-            <div class="detail-item"><span>⏳ Serviços Pendentes</span><span class="pending">${(data.totalServices || 0) - (data.completedServices || 0)}</span></div>
-            <div class="detail-item"><span>📅 Período</span><span>${getPeriodText(period)}</span></div>
-        `;
-        if (period === 'daily') {
-            details.innerHTML += `<div class="detail-item"><span>📆 Data</span><span>${new Date().toLocaleDateString()}</span></div>`;
+        if (revenueEl) revenueEl.innerHTML = formatCurrency(data.revenue);
+        if (expensesEl) expensesEl.innerHTML = formatCurrency(data.expenses);
+        if (profitEl) profitEl.innerHTML = formatCurrency(data.profit);
+        
+        // Atualizar detalhes adicionais (se existir o elemento)
+        const detailsContainer = document.getElementById('financialDetails');
+        if (detailsContainer) {
+            detailsContainer.innerHTML = `
+                <div class="detail-item"><span>📊 Total de Serviços</span><span>${data.totalServices || 0}</span></div>
+                <div class="detail-item"><span>✅ Serviços Concluídos</span><span class="completed">${data.completedServices || 0}</span></div>
+                <div class="detail-item"><span>⏳ Serviços Pendentes</span><span class="pending">${(data.totalServices || 0) - (data.completedServices || 0)}</span></div>
+                <div class="detail-item"><span>📅 Período</span><span>${getPeriodText(period)}</span></div>
+            `;
+            if (period === 'daily') {
+                detailsContainer.innerHTML += `<div class="detail-item"><span>📆 Data</span><span>${new Date().toLocaleDateString()}</span></div>`;
+            }
         }
         
-        document.querySelectorAll('.period-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.period === period);
+        // Marcar botão ativo (os botões têm classe 'period-btn-modern' no seu HTML)
+        document.querySelectorAll('.period-btn-modern').forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.period === period) {
+                btn.classList.add('active');
+            }
         });
     } catch (error) {
         console.error('Erro ao carregar relatório:', error);
-        document.getElementById('financeRevenue').innerHTML = formatCurrency(0);
-        document.getElementById('financeExpenses').innerHTML = formatCurrency(0);
-        document.getElementById('financeProfit').innerHTML = formatCurrency(0);
-        document.getElementById('financialDetails').innerHTML = '<div class="alert alert-danger">Erro ao carregar dados financeiros</div>';
+        const revenueEl = document.getElementById('financeRevenue');
+        const expensesEl = document.getElementById('financeExpenses');
+        const profitEl = document.getElementById('financeProfit');
+        if (revenueEl) revenueEl.innerHTML = formatCurrency(0);
+        if (expensesEl) expensesEl.innerHTML = formatCurrency(0);
+        if (profitEl) profitEl.innerHTML = formatCurrency(0);
+        
+        const detailsContainer = document.getElementById('financialDetails');
+        if (detailsContainer) {
+            detailsContainer.innerHTML = '<div class="alert alert-danger">Erro ao carregar dados financeiros</div>';
+        }
     }
 }
 
