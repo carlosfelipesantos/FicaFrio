@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateDateTime, 60000);
 
 
-    // 🔥 Corrige scroll travado em todos os modais
+    //  Corrige scroll travado em todos os modais
 document.addEventListener('hidden.bs.modal', function() {
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
@@ -137,8 +137,8 @@ function setupEventListeners() {
         });
     }
 
-    // 🔥 Botões de período com debounce (apenas uma vez)
-    // 🔥 Botões de período - sem debounce (mais rápido)
+    //  Botões de período com debounce (apenas uma vez)
+    //  Botões de período - sem debounce (mais rápido)
 // Dentro de setupEventListeners, após os botões de período, adicione:
 
 // Mostrar/esconder seletores conforme o período
@@ -165,7 +165,7 @@ periodBtns.forEach(btn => {
             yearSelector.style.display = 'none';
         }
         
-        // 🔥 CARREGAR O RELATÓRIO DO PERÍODO SELECIONADO
+        //  CARREGAR O RELATÓRIO DO PERÍODO SELECIONADO
         loadFinancialReport(period);
     });
 });
@@ -232,7 +232,7 @@ function updateStats() {
         .filter(s => s.status === 'Completo')
         .reduce((sum, s) => sum + s.valor, 0);
     
-    // 🔥 Calcular gastos do mês usando os gastos carregados nos serviços
+    //  Calcular gastos do mês usando os gastos carregados nos serviços
     let monthExpenses = 0;
     for (const service of monthServices) {
         if (service.gastos && service.gastos.length > 0) {
@@ -415,7 +415,7 @@ console.log('Tamanho da foto:', servicePhotoBase64?.length || 0);
         FimGarantia: fimGarantia,
         ClienteId: clienteId,
         FotoServico: servicePhotoBase64 
-        // 🔥 NÃO envia Cliente: { ... }
+
     };
 
     const btnSubmit = event.target.querySelector('button[type="submit"]');
@@ -437,8 +437,7 @@ console.log('Tamanho da foto:', servicePhotoBase64?.length || 0);
         }
         const savedService = await response.json();
 
-        // Salvar gastos
-        // Salvar gastos (depois de salvar o serviço)
+
 // Salvar gastos
 if (gastos.length > 0) {
     for (const gasto of gastos) {
@@ -481,7 +480,7 @@ if (gastos.length > 0) {
 
 // Exibir detalhes do serviço
 async function showServiceDetails(id) {
-    console.log('Abrindo detalhes do serviço ID:', id);  // 🔥 Verificar se o ID vem correto
+    console.log('Abrindo detalhes do serviço ID:', id);  //  Verificar se o ID vem correto
     
     try {
         const [serviceRes, gastosRes] = await Promise.all([
@@ -491,7 +490,7 @@ async function showServiceDetails(id) {
         const service = await serviceRes.json();
         const gastosLista = await gastosRes.json();
         
-        console.log('Serviço carregado, ID:', service.id);  // 🔥 Verificar ID do serviço
+        console.log('Serviço carregado, ID:', service.id);  //  Verificar ID do serviço
         
         const totalGastos = gastosLista.reduce((sum, g) => sum + g.valor, 0);
         const lucroReal = service.valor - totalGastos;
@@ -562,7 +561,7 @@ async function showServiceDetails(id) {
                 backdrop.remove();
             }
             document.body.classList.remove('modal-open');
-        }, { once: true });  // 🔥 Adiciona { once: true } para executar apenas uma vez
+        }, { once: true });  //  Adiciona { once: true } para executar apenas uma vez
         
     } catch (error) {
         console.error('Erro ao carregar detalhes:', error);
@@ -570,7 +569,7 @@ async function showServiceDetails(id) {
 }
 
 async function deletarServico(id) {
-    console.log('Tentando excluir serviço ID:', id);  // 🔥 Verificar o ID recebido
+    console.log('Tentando excluir serviço ID:', id);  //  Verificar o ID recebido
     
     if (!id || id === 'undefined') {
         console.error('ID inválido para exclusão');
@@ -783,7 +782,7 @@ function verServicoCliente(servicoId) {
 
 function filtrarClientes() {
     const term = document.getElementById('searchClienteInput').value.toLowerCase();
-    // 🔥 Remove caracteres não numéricos para comparar telefone
+    //  Remove caracteres não numéricos para comparar telefone
     const termNumerico = term.replace(/\D/g, '');
     
     const filtered = clientes.filter(c => {
@@ -814,8 +813,8 @@ async function loadFinancialReport(period) {
         // Buscar os dados financeiros da API
         const response = await fetch(`${API_URL}/Services/financial/${period}`);
         const data = await response.json();
-        
-        // 🔥 Buscar todos os serviços para calcular gastos corretamente
+    
+        //  Buscar todos os serviços para calcular gastos corretamente
         const servicesResponse = await fetch(`${API_URL}/Services`);
         const allServices = await servicesResponse.json();
         
@@ -926,7 +925,7 @@ async function loadFinancialReport(period) {
     }
 }
 
-// 🔥 Nova função: Carregar serviços do período selecionado
+//  Nova função: Carregar serviços do período selecionado
 async function carregarServicosDoPeriodo(period) {
     try {
         const hoje = new Date();
@@ -973,7 +972,7 @@ async function carregarServicosDoPeriodo(period) {
     }
 }
 
-// 🔥 Nova função: Exibir lista de serviços que compõem o faturamento
+//  Nova função: Exibir lista de serviços que compõem o faturamento
 function exibirListaServicosFaturamento(servicos, period) {
     const container = document.getElementById('listaFaturamentoContainer');
     if (!container) return;

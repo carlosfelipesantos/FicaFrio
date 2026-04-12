@@ -6,7 +6,7 @@ using RefrigeratorRepairSystem.Services;
 using System;
 using System.Threading.Tasks;
 
-namespace RefrigeratorRepairSystem.Controllers  // 🔥 Namespace único e correto
+namespace RefrigeratorRepairSystem.Controllers  
 {
     [Route("api/[controller]")]
     [ApiController]

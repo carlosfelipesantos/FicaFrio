@@ -29,7 +29,7 @@ namespace RefrigeratorRepairSystem.Models
         public DateTime DataGasto { get; set; }
 
         [ForeignKey("ServiceId")]
-        // 🔥 Remova o [Required] desta linha e torne a propriedade anulável
+       
         public virtual Service? Service { get; set; }
     }
 }

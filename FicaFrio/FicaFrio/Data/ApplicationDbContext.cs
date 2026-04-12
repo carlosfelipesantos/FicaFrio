@@ -20,7 +20,7 @@ namespace RefrigeratorRepairSystem.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // Configurar índices para melhor performance
+     
             modelBuilder.Entity<Service>()
                 .HasIndex(s => s.DataServico);
 
@@ -44,7 +44,7 @@ namespace RefrigeratorRepairSystem.Data
     .HasForeignKey(s => s.ClienteId)
     .OnDelete(DeleteBehavior.Restrict); // Não permite deletar cliente com serviços
 
-            // Índices para cliente
+          
             modelBuilder.Entity<Cliente>()
                 .HasIndex(c => c.Nome);
 

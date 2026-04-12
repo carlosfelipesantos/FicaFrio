@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // 🔥 SOLUÇÃO: Ignorar ciclos de referência (evita o loop infinito)
+        //  Ignorar ciclos de referência (evita o loop infinito)
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
@@ -18,7 +18,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// CORS configurado APENAS UMA VEZ
+// CORS configurado 
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", builder =>

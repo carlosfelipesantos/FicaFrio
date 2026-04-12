@@ -28,7 +28,7 @@ namespace RefrigeratorRepairSystem.Models
 
         public DateTime DataCadastro { get; set; } = DateTime.Now;
 
-        // Relacionamento: um cliente pode ter muitos serviços
+       
         public virtual ICollection<Service> Servicos { get; set; } = new List<Service>();
     }
 }

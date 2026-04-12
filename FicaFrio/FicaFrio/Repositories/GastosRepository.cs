@@ -18,7 +18,7 @@ namespace FicaFrio.Repositories
             return await _context.Gastos.FindAsync(id);
         }
 
-        // 🔥 Corrigido: parâmetro renomeado para 'gasto'
+
         public async Task<Gasto> CreateAsync(Gasto gasto)
         {
             _context.Gastos.Add(gasto);

@@ -18,7 +18,7 @@ namespace RefrigeratorRepairSystem.Models
         [MaxLength(20)]
         public string TelefoneCliente { get; set; } = string.Empty;
 
-        public string? FotoServico { get; set; }  // Base64 da foto
+        public string? FotoServico { get; set; } 
 
         [Required]
         [MaxLength(200)]
@@ -34,7 +34,7 @@ namespace RefrigeratorRepairSystem.Models
         [Required]
         public DateTime DataServico { get; set; }
 
-        // 🔥 Torna ClienteId anulável (opcional)
+       
         public int? ClienteId { get; set; }
 
         [ForeignKey("ClienteId")]

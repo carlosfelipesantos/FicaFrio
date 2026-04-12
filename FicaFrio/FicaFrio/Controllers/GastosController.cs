@@ -26,7 +26,7 @@ namespace FicaFrio.Controllers
         [HttpPost]
         public async Task<ActionResult<Gasto>> CreateExpense(Gasto gasto)
         {
-            // 🔥 Remove validação do Service
+           
             ModelState.Remove("Service");
 
             if (!ModelState.IsValid)

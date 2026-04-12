@@ -23,7 +23,7 @@ namespace RefrigeratorRepairSystem.Services
             return await _context.Services
                 .Where(s => s.DataServico.Date >= start.Date &&
                            s.DataServico.Date <= end.Date &&
-                           s.Status == "Completo")  // Status em português
+                           s.Status == "Completo")  
                 .SumAsync(s => s.Valor);
         }
 

@@ -21,7 +21,7 @@ namespace RefrigeratorRepairSystem.Repositories
         public async Task<IEnumerable<Service>> GetAllAsync()
         {
             return await _context.Services
-                .Include(s => s.Gastos)  // 🔥 Adicione esta linha
+                .Include(s => s.Gastos)  
                 .OrderByDescending(s => s.DataServico)
                 .ToListAsync();
         }
@@ -29,7 +29,7 @@ namespace RefrigeratorRepairSystem.Repositories
         public async Task<Service> GetByIdAsync(int id)
         {
             return await _context.Services
-                .Include(s => s.Gastos)  // 🔥 Já deve ter esta linha
+                .Include(s => s.Gastos)  
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
 
@@ -74,7 +74,7 @@ namespace RefrigeratorRepairSystem.Repositories
         public async Task<IEnumerable<Service>> GetByDateRangeAsync(DateTime start, DateTime end)
         {
             return await _context.Services
-                .Include(s => s.Gastos)  // 🔥 ADICIONE ESTA LINHA
+                .Include(s => s.Gastos)  
                 .Where(s => s.DataServico.Date >= start.Date && s.DataServico.Date <= end.Date)
                 .OrderByDescending(s => s.DataServico)
                 .ToListAsync();
