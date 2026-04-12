@@ -37,6 +37,12 @@ builder.Services.AddScoped<IGastosRepository, GastosRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<FinancialService>();
 
+var connectionString = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+if (!string.IsNullOrEmpty(connectionString))
+{
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+}
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

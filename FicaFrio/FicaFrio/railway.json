@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "startCommand": "dotnet FicaFrio.dll",
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
