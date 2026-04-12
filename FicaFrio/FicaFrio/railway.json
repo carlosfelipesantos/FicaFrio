@@ -1,11 +1,9 @@
 {
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
+    "builder": "NIXPACKS"
   },
   "deploy": {
-    "numReplicas": 1,
     "startCommand": "dotnet FicaFrio.dll",
-    "restartPolicyType": "ON_FAILURE"
+    "healthcheckPath": "/api/Services"
   }
 }
