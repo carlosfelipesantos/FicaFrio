@@ -48,8 +48,6 @@ namespace RefrigeratorRepairSystem.Controllers  // 🔥 Namespace único e corre
 
             ModelState.Remove("Cliente");
 
-            ModelState.Remove("Cliente");
-
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 

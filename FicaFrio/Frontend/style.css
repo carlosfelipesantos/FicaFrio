@@ -1564,3 +1564,38 @@ button.btn-salvar-registro:hover {
     color: #dc3545;
     margin-top: 2px;
 }
+
+/* Seletor de mês/ano */
+.month-year-selector, .year-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 16px;
+}
+
+.month-select, .year-select {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+}
+
+.btn-apply-month, .btn-apply-year {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.2s;
+}
+
+.btn-apply-month:active, .btn-apply-year:active {
+    transform: scale(0.96);
+}

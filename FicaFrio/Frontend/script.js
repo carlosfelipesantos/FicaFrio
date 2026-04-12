@@ -139,10 +139,34 @@ function setupEventListeners() {
 
     // 🔥 Botões de período com debounce (apenas uma vez)
     // 🔥 Botões de período - sem debounce (mais rápido)
+// Dentro de setupEventListeners, após os botões de período, adicione:
+
+// Mostrar/esconder seletores conforme o período
+// Dentro de setupEventListeners, configure os botões de período
 const periodBtns = document.querySelectorAll('.period-btn-modern');
 periodBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-        loadFinancialReport(btn.dataset.period);
+        const period = btn.dataset.period;
+        
+        // Mostrar/esconder seletores conforme o período
+        const monthYearSelector = document.getElementById('monthYearSelector');
+        const yearSelector = document.getElementById('yearSelector');
+        
+        if (period === 'monthly') {
+            monthYearSelector.style.display = 'flex';
+            yearSelector.style.display = 'none';
+            popularAnos();
+        } else if (period === 'yearly') {
+            monthYearSelector.style.display = 'none';
+            yearSelector.style.display = 'flex';
+            popularAnos();
+        } else {
+            monthYearSelector.style.display = 'none';
+            yearSelector.style.display = 'none';
+        }
+        
+        // 🔥 CARREGAR O RELATÓRIO DO PERÍODO SELECIONADO
+        loadFinancialReport(period);
     });
 });
     
@@ -1240,4 +1264,190 @@ function irParaServicos() {
 
 function irParaClientes() {
     changeScreen('clientes');
+}
+
+
+// ==================== SELETOR DE MÊS/ANO ====================
+let mesSelecionado = new Date().getMonth();
+let anoSelecionado = new Date().getFullYear();
+
+function popularAnos() {
+    const anoAtual = new Date().getFullYear();
+    const anoInicio = anoAtual - 5;
+    const anoFim = anoAtual + 1;
+    
+    const yearSelect = document.getElementById('yearSelect');
+    const yearOnlySelect = document.getElementById('yearOnlySelect');
+    
+    if (yearSelect) {
+        yearSelect.innerHTML = '';
+        for (let i = anoInicio; i <= anoFim; i++) {
+            yearSelect.innerHTML += `<option value="${i}" ${i === anoAtual ? 'selected' : ''}>${i}</option>`;
+        }
+    }
+    
+    if (yearOnlySelect) {
+        yearOnlySelect.innerHTML = '';
+        for (let i = anoInicio; i <= anoFim; i++) {
+            yearOnlySelect.innerHTML += `<option value="${i}" ${i === anoAtual ? 'selected' : ''}>${i}</option>`;
+        }
+    }
+}
+
+function aplicarFiltroMes() {
+    const mes = parseInt(document.getElementById('monthSelect').value);
+    const ano = parseInt(document.getElementById('yearSelect').value);
+    
+    mesSelecionado = mes;
+    anoSelecionado = ano;
+    
+    // Calcular datas do mês selecionado
+    const startDate = new Date(ano, mes, 1);
+    const endDate = new Date(ano, mes + 1, 0);
+    
+    carregarRelatorioPorPeriodo(startDate, endDate, `Mês de ${getNomeMes(mes)}/${ano}`);
+}
+
+function aplicarFiltroAno() {
+    const ano = parseInt(document.getElementById('yearOnlySelect').value);
+    anoSelecionado = ano;
+    
+    const startDate = new Date(ano, 0, 1);
+    const endDate = new Date(ano, 11, 31);
+    
+    carregarRelatorioPorPeriodo(startDate, endDate, `Ano de ${ano}`);
+}
+
+function getNomeMes(mes) {
+    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    return meses[mes];
+}
+
+async function carregarRelatorioPorPeriodo(startDate, endDate, tituloPeriodo) {
+    try {
+        // Mostrar loading
+        const revenueEl = document.getElementById('financeRevenue');
+        const expensesEl = document.getElementById('financeExpenses');
+        const profitEl = document.getElementById('financeProfit');
+        
+        if (revenueEl) revenueEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (expensesEl) expensesEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        if (profitEl) profitEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        // Buscar serviços do período
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
+        
+        const response = await fetch(`${API_URL}/Services/period?start=${startStr}&end=${endStr}`);
+        const servicos = await response.json();
+        
+        // Calcular totais
+        let totalFaturamento = 0;
+        let totalGastos = 0;
+        let totalServicos = 0;
+        let totalConcluidos = 0;
+        
+        servicos.forEach(servico => {
+            totalServicos++;
+            if (servico.status === 'Completo') {
+                totalConcluidos++;
+                totalFaturamento += servico.valor;
+                if (servico.gastos && servico.gastos.length > 0) {
+                    totalGastos += servico.gastos.reduce((sum, g) => sum + g.valor, 0);
+                }
+            }
+        });
+        
+        const lucroReal = totalFaturamento - totalGastos;
+        
+        // Atualizar cards
+        if (revenueEl) revenueEl.innerHTML = formatCurrency(totalFaturamento);
+        if (expensesEl) expensesEl.innerHTML = formatCurrency(totalGastos);
+        if (profitEl) profitEl.innerHTML = formatCurrency(lucroReal);
+        
+        // Atualizar detalhes
+        const detailsContainer = document.getElementById('financialDetails');
+        if (detailsContainer) {
+            detailsContainer.innerHTML = `
+                <div class="detail-item"><span>📊 Total de Serviços</span><span>${totalServicos}</span></div>
+                <div class="detail-item"><span>✅ Serviços Concluídos</span><span class="completed">${totalConcluidos}</span></div>
+                <div class="detail-item"><span>⏳ Serviços Pendentes</span><span class="pending">${totalServicos - totalConcluidos}</span></div>
+                <div class="detail-item"><span>📅 Período</span><span>${tituloPeriodo}</span></div>
+            `;
+        }
+        
+        // Exibir lista de serviços
+        exibirListaServicosFaturamentoPersonalizada(servicos, tituloPeriodo, totalFaturamento, totalGastos, lucroReal);
+        
+    } catch (error) {
+        console.error('Erro ao carregar relatório:', error);
+    }
+}
+
+function exibirListaServicosFaturamentoPersonalizada(servicos, tituloPeriodo, totalFaturamento, totalGastos, totalLucro) {
+    const container = document.getElementById('listaFaturamentoContainer');
+    if (!container) return;
+    
+    const servicosConcluidos = servicos.filter(s => s.status === 'Completo');
+    
+    if (servicosConcluidos.length === 0) {
+        container.innerHTML = `
+            <div class="lista-faturamento">
+                <div class="lista-header">
+                    <h4>📋 Serviços que compõem o faturamento (${tituloPeriodo})</h4>
+                    <div class="totais-periodo">
+                        <span class="total-faturamento">💰 Faturamento: ${formatCurrency(totalFaturamento)}</span>
+                        <span class="total-gastos">💸 Gastos: ${formatCurrency(totalGastos)}</span>
+                        <span class="total-lucro">📈 Lucro: ${formatCurrency(totalLucro)}</span>
+                    </div>
+                </div>
+                <div class="lista-vazia">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Nenhum serviço concluído neste período</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = `
+        <div class="lista-faturamento">
+            <div class="lista-header">
+                <h4>📋 Serviços que compõem o faturamento (${tituloPeriodo})</h4>
+                <div class="totais-periodo">
+                    <span class="total-faturamento">💰 Faturamento: ${formatCurrency(totalFaturamento)}</span>
+                    <span class="total-gastos">💸 Gastos: ${formatCurrency(totalGastos)}</span>
+                    <span class="total-lucro">📈 Lucro: ${formatCurrency(totalLucro)}</span>
+                </div>
+            </div>
+            <div class="lista-itens">
+    `;
+    
+    servicosConcluidos.forEach(servico => {
+        const totalGastosServico = servico.gastos?.reduce((sum, g) => sum + g.valor, 0) || 0;
+        const lucroServico = servico.valor - totalGastosServico;
+        
+        html += `
+            <div class="item-faturamento" onclick="showServiceDetails(${servico.id})">
+                <div class="item-info">
+                    <div class="item-cliente">${servico.nomeCliente}</div>
+                    <div class="item-descricao">${servico.descricaoServico.substring(0, 50)}${servico.descricaoServico.length > 50 ? '...' : ''}</div>
+                    <div class="item-data">📅 ${new Date(servico.dataServico).toLocaleDateString()}</div>
+                </div>
+                <div class="item-valores">
+                    <div class="item-valor">💰 ${formatCurrency(servico.valor)}</div>
+                    <div class="item-gastos">💸 Gastos: ${formatCurrency(totalGastosServico)}</div>
+                    <div class="item-lucro">📈 Lucro: ${formatCurrency(lucroServico)}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
 }

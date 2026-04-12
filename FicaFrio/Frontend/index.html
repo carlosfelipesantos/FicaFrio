@@ -216,15 +216,44 @@
         </div>
 
         <!-- Seletor de período estilizado -->
-        <div class="period-container">
-            <div class="period-buttons">
-                <button class="period-btn-modern" data-period="daily">Hoje</button>
-                <button class="period-btn-modern" data-period="weekly">Semana</button>
-                <button class="period-btn-modern" data-period="monthly">Mês</button>
-                <button class="period-btn-modern" data-period="yearly">Ano</button>
-            </div>
-        </div>
-
+<div class="period-container">
+    <div class="period-buttons">
+        <button class="period-btn-modern" data-period="daily">Hoje</button>
+        <button class="period-btn-modern" data-period="weekly">Semana</button>
+        <button class="period-btn-modern" data-period="monthly">Mês</button>
+        <button class="period-btn-modern" data-period="yearly">Ano</button>
+    </div>
+    
+    <!-- 🔥 Seletor de mês/ano (aparece apenas quando Mês ou Ano estiver selecionado) -->
+    <div class="month-year-selector" id="monthYearSelector" style="display: none;">
+        <select id="monthSelect" class="month-select">
+            <option value="0">Janeiro</option>
+            <option value="1">Fevereiro</option>
+            <option value="2">Março</option>
+            <option value="3">Abril</option>
+            <option value="4">Maio</option>
+            <option value="5">Junho</option>
+            <option value="6">Julho</option>
+            <option value="7">Agosto</option>
+            <option value="8">Setembro</option>
+            <option value="9">Outubro</option>
+            <option value="10">Novembro</option>
+            <option value="11">Dezembro</option>
+        </select>
+        <select id="yearSelect" class="year-select">
+            <!-- Anos serão preenchidos via JS -->
+        </select>
+        <button class="btn-apply-month" onclick="aplicarFiltroMes()">Aplicar</button>
+    </div>
+    
+    <!-- 🔥 Seletor de ano (apenas para Ano) -->
+    <div class="year-selector" id="yearSelector" style="display: none;">
+        <select id="yearOnlySelect" class="year-select">
+            <!-- Anos serão preenchidos via JS -->
+        </select>
+        <button class="btn-apply-year" onclick="aplicarFiltroAno()">Aplicar</button>
+    </div>
+</div>
         <!-- Detalhes extras -->
         <div id="financialDetails" class="financial-details-modern">
             <!-- Os detalhes serão preenchidos via JS -->
