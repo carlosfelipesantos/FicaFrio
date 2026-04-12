@@ -1,0 +1,12 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacks]
+plan = """
+phases.setup.nixPkgs = ["dotnet-sdk_8"]
+phases.install = "dotnet restore"
+phases.build = "dotnet publish -c Release -o /app/publish"
+"""
+
+[deploy]
+startCommand = "cd /app/publish && dotnet FicaFrio.dll"
