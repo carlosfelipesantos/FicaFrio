@@ -5,6 +5,8 @@ using RefrigeratorRepairSystem.Repositories;
 using RefrigeratorRepairSystem.Services;
 using System.Text.Json.Serialization;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()
