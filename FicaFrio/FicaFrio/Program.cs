@@ -49,18 +49,14 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    //dbContext.Database.EnsureCreated(); // Cria o banco se ele não existir
-}
+
 
 
     app.UseSwagger();
     app.UseSwaggerUI();
 
 app.MapGet("/healthz", () => "ok");
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
