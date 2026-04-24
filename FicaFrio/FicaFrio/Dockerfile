@@ -2,22 +2,23 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Copia tudo
-COPY . .
+# Copia só o csproj primeiro (cache melhor)
+COPY FicaFrio/*.csproj ./FicaFrio/
+WORKDIR /app/FicaFrio
 
-# Restaura dependências
 RUN dotnet restore
 
+# Copia o resto
+COPY FicaFrio/. ./
+
 # Publica
-RUN dotnet publish -c Release -o out
+RUN dotnet publish -c Release -o /app/out
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/out .
 
-# Porta do Render
 ENV ASPNETCORE_URLS=http://+:10000
 
-# Start
 ENTRYPOINT ["dotnet", "FicaFrio.dll"]
