@@ -49,10 +49,21 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.EnsureCreated();
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine("ERRO BANCO: " + ex.Message);
+}
 
 
-
-    app.UseSwagger();
+app.UseSwagger();
     app.UseSwaggerUI();
 
 app.MapGet("/healthz", () => "ok");
