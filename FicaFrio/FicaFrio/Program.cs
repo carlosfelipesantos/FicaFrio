@@ -55,11 +55,10 @@ var app = builder.Build();
     //dbContext.Database.EnsureCreated(); // Cria o banco se ele não existir
 //}
 
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
