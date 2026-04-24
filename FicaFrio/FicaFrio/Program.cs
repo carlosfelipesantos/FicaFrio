@@ -59,7 +59,7 @@ using (var scope = app.Services.CreateScope())
     app.UseSwagger();
     app.UseSwaggerUI();
 
-
+app.MapGet("/healthz", () => "ok");
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthorization();
