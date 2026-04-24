@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:5244/api';
+const API_URL = 'https://ficafrio-api-ebd4b2adgbbjandm.canadacentral-01.azurewebsites.net/api';
 
 let services = [];
 let clientes = [];

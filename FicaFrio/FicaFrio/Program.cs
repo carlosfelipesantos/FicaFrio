@@ -4,6 +4,7 @@ using RefrigeratorRepairSystem.Data;
 using RefrigeratorRepairSystem.Repositories;
 using RefrigeratorRepairSystem.Services;
 using System.Text.Json.Serialization;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,8 +30,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+//builder.Services.AddDbContext<ApplicationDbContext>(options =>
+  //  options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IGastosRepository, GastosRepository>();
@@ -43,7 +44,16 @@ if (!string.IsNullOrEmpty(connectionString))
     builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
 }
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 var app = builder.Build();
+
+//using (var scope = app.Services.CreateScope())
+//{
+  //  var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    //dbContext.Database.EnsureCreated(); // Cria o banco se ele não existir
+//}
 
 if (app.Environment.IsDevelopment())
 {
@@ -56,4 +66,6 @@ app.UseCors("AllowAll");
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
+app.Run($"http://0.0.0.0:{port}");
+
