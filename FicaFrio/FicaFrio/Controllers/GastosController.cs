@@ -1,4 +1,5 @@
-﻿using FicaFrio.Repositories;
+﻿using FicaFrio.DTO;
+using FicaFrio.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using RefrigeratorRepairSystem.Models;
 
@@ -21,6 +22,34 @@ namespace FicaFrio.Controllers
             var gasto = await _gastosRepository.GetByIdAsync(id);
             if (gasto == null) return NotFound();
             return Ok(gasto);
+        }
+
+        [HttpPost("retorno")]
+        public async Task<ActionResult<Gasto>> CriarRetorno(RetornoDTO dto)
+        {
+            if (dto.ServiceId <= 0)
+                return BadRequest(new { message = "Informe o serviço do retorno." });
+
+            if (string.IsNullOrWhiteSpace(dto.Motivo))
+                return BadRequest(new { message = "Informe o motivo do retorno." });
+
+            var descricao = $"Retorno/Garantia - Motivo: {dto.Motivo}";
+
+            if (!string.IsNullOrWhiteSpace(dto.Solucao))
+                descricao += $" | Solução: {dto.Solucao}";
+
+            var gasto = new Gasto
+            {
+                ServiceId = dto.ServiceId,
+                TipoDeGasto = "Retorno",
+                Descricacao = descricao,
+                Valor = dto.ValorGasto,
+                DataGasto = dto.DataRetorno
+            };
+
+            var created = await _gastosRepository.CreateAsync(gasto);
+
+            return CreatedAtAction(nameof(GetGastoPorId), new { id = created.Id }, created);
         }
 
         [HttpPost]
